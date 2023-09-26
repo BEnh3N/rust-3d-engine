@@ -17,8 +17,11 @@ const SCALE: i32 = 4;
 struct Engine3D {
     elapsed_time: Duration,
     theta: f32,
+
     mesh_cube: Mesh,
     mat_proj: Mat4x4,
+
+    camera: Vec3D,
 }
 
 fn main() {
@@ -103,11 +106,14 @@ impl Engine3D {
         mat_proj.m[2][3] = 1.0;
         mat_proj.m[3][3] = 0.0;
 
+        let camera = Vec3D::new();
+
         Self {
             elapsed_time: Duration::new(0, 0),
             theta: 0.0,
             mesh_cube,
             mat_proj,
+            camera,
         }
     }
 
@@ -149,6 +155,7 @@ impl Engine3D {
                     multiply_matrix_vector(&tri.p[1], &mat_rot_z),
                     multiply_matrix_vector(&tri.p[2], &mat_rot_z),
                 ],
+                col: [0xff, 0xff, 0xff, 0xff],
             };
 
             // Rotate in X-Axis
@@ -158,6 +165,7 @@ impl Engine3D {
                     multiply_matrix_vector(&tri_rotated_z.p[1], &mat_rot_x),
                     multiply_matrix_vector(&tri_rotated_z.p[2], &mat_rot_x),
                 ],
+                col: [0xff, 0xff, 0xff, 0xff],
             };
 
             // Offset into the screen
@@ -166,42 +174,96 @@ impl Engine3D {
             tri_translated.p[1].z = tri_rotated_zx.p[1].z + 3.0;
             tri_translated.p[2].z = tri_rotated_zx.p[2].z + 3.0;
 
-            // Project triangles from 3D --> 2D
-            let mut tri_projected = Triangle {
-                p: [
-                    multiply_matrix_vector(&tri_translated.p[0], &self.mat_proj),
-                    multiply_matrix_vector(&tri_translated.p[1], &self.mat_proj),
-                    multiply_matrix_vector(&tri_translated.p[2], &self.mat_proj),
-                ],
+            let line1 = Vec3D {
+                x: tri_translated.p[1].x - tri_translated.p[0].x,
+                y: tri_translated.p[1].y - tri_translated.p[0].y,
+                z: tri_translated.p[1].z - tri_translated.p[0].z,
             };
 
-            // Scale into view
-            tri_projected.p[0].x += 1.0;
-            tri_projected.p[0].y += 1.0;
-            tri_projected.p[1].x += 1.0;
-            tri_projected.p[1].y += 1.0;
-            tri_projected.p[2].x += 1.0;
-            tri_projected.p[2].y += 1.0;
+            let line2 = Vec3D {
+                x: tri_translated.p[2].x - tri_translated.p[0].x,
+                y: tri_translated.p[2].y - tri_translated.p[0].y,
+                z: tri_translated.p[2].z - tri_translated.p[0].z,
+            };
 
-            tri_projected.p[0].x *= 0.5 * WIDTH as f32;
-            tri_projected.p[0].y *= 0.5 * HEIGHT as f32;
-            tri_projected.p[1].x *= 0.5 * WIDTH as f32;
-            tri_projected.p[1].y *= 0.5 * HEIGHT as f32;
-            tri_projected.p[2].x *= 0.5 * WIDTH as f32;
-            tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
+            let mut normal = Vec3D {
+                x: line1.y * line2.z - line1.z * line2.y,
+                y: line1.z * line2.x - line1.x * line2.z,
+                z: line1.x * line2.y - line1.y * line2.x,
+            };
 
-            // Rasterize triangles
-            pixels_primitives::triangle(
-                frame,
-                WIDTH,
-                tri_projected.p[0].x as i32,
-                tri_projected.p[0].y as i32,
-                tri_projected.p[1].x as i32,
-                tri_projected.p[1].y as i32,
-                tri_projected.p[2].x as i32,
-                tri_projected.p[2].y as i32,
-                &[0xff, 0xff, 0xff, 0xff],
-            )
+            let l = (normal.x * normal.x + normal.y * normal.y + normal.z * normal.z).sqrt();
+            normal.x /= l;
+            normal.y /= l;
+            normal.z /= l;
+
+            if normal.x * (tri_translated.p[0].x - self.camera.x)
+                + normal.y * (tri_translated.p[0].y - self.camera.y)
+                + normal.z * (tri_translated.p[0].z - self.camera.z)
+                < 0.0
+            {
+                // Illumination
+                let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0 };
+                let l = (light_direction.x * light_direction.x + light_direction.y * light_direction.y + light_direction.z * light_direction.z).sqrt();
+                light_direction.x /= l;
+                light_direction.y /= l;
+                light_direction.z /= l;
+
+                let dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
+
+                let c = get_color(dp);
+                tri_translated.col = c;
+
+                // Project triangles from 3D --> 2D
+                let mut tri_projected = Triangle {
+                    p: [
+                        multiply_matrix_vector(&tri_translated.p[0], &self.mat_proj),
+                        multiply_matrix_vector(&tri_translated.p[1], &self.mat_proj),
+                        multiply_matrix_vector(&tri_translated.p[2], &self.mat_proj),
+                    ],
+                    col: tri_translated.col
+                };
+
+                // Scale into view
+                tri_projected.p[0].x += 1.0;
+                tri_projected.p[0].y += 1.0;
+                tri_projected.p[1].x += 1.0;
+                tri_projected.p[1].y += 1.0;
+                tri_projected.p[2].x += 1.0;
+                tri_projected.p[2].y += 1.0;
+
+                tri_projected.p[0].x *= 0.5 * WIDTH as f32;
+                tri_projected.p[0].y *= 0.5 * HEIGHT as f32;
+                tri_projected.p[1].x *= 0.5 * WIDTH as f32;
+                tri_projected.p[1].y *= 0.5 * HEIGHT as f32;
+                tri_projected.p[2].x *= 0.5 * WIDTH as f32;
+                tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
+
+                // Rasterize triangles
+                pixels_primitives::triangle_filled(
+                    frame,
+                    WIDTH,
+                    tri_projected.p[0].x as i32,
+                    tri_projected.p[0].y as i32,
+                    tri_projected.p[1].x as i32,
+                    tri_projected.p[1].y as i32,
+                    tri_projected.p[2].x as i32,
+                    tri_projected.p[2].y as i32,
+                    &tri_projected.col,
+                );
+
+                pixels_primitives::triangle(
+                    frame,
+                    WIDTH,
+                    tri_projected.p[0].x as i32,
+                    tri_projected.p[0].y as i32,
+                    tri_projected.p[1].x as i32,
+                    tri_projected.p[1].y as i32,
+                    tri_projected.p[2].x as i32,
+                    tri_projected.p[2].y as i32,
+                    &[0, 0, 0, 0xff],
+                );
+            }
         }
     }
 }

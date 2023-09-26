@@ -18,12 +18,14 @@ impl Vec3D {
 #[derive(Clone)]
 pub struct Triangle {
     pub p: [Vec3D; 3],
+    pub col: [u8; 4],
 }
 
 impl Triangle {
     pub fn new() -> Self {
         Self {
             p: [Vec3D::new(), Vec3D::new(), Vec3D::new()],
+            col: [0xff, 0xff, 0xff, 0xff],
         }
     }
 }
@@ -54,6 +56,7 @@ impl Mesh {
                         z: tri[8],
                     },
                 ],
+                col: [0xff, 0xff, 0xff, 0xff],
             })
         }
         Self { tris }
@@ -86,4 +89,11 @@ pub fn multiply_matrix_vector(i: &Vec3D, m: &Mat4x4) -> Vec3D {
     }
 
     return o;
+}
+
+pub fn get_color(lum: f32) -> [u8; 4] {
+    let r = (lum * 255.0) as u8;
+    let g = (lum * 255.0) as u8;
+    let b = (lum * 255.0) as u8;
+    [r, g, b, 0xff]
 }
