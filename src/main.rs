@@ -203,13 +203,22 @@ impl Engine3D {
                 < 0.0
             {
                 // Illumination
-                let mut light_direction = Vec3D { x: 0.0, y: 0.0, z: -1.0 };
-                let l = (light_direction.x * light_direction.x + light_direction.y * light_direction.y + light_direction.z * light_direction.z).sqrt();
+                let mut light_direction = Vec3D {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -1.0,
+                };
+                let l = (light_direction.x * light_direction.x
+                    + light_direction.y * light_direction.y
+                    + light_direction.z * light_direction.z)
+                    .sqrt();
                 light_direction.x /= l;
                 light_direction.y /= l;
                 light_direction.z /= l;
 
-                let dp = normal.x * light_direction.x + normal.y * light_direction.y + normal.z * light_direction.z;
+                let dp = normal.x * light_direction.x
+                    + normal.y * light_direction.y
+                    + normal.z * light_direction.z;
 
                 let c = get_color(dp);
                 tri_translated.col = c;
@@ -221,7 +230,7 @@ impl Engine3D {
                         multiply_matrix_vector(&tri_translated.p[1], &self.mat_proj),
                         multiply_matrix_vector(&tri_translated.p[2], &self.mat_proj),
                     ],
-                    col: tri_translated.col
+                    col: tri_translated.col,
                 };
 
                 // Scale into view
@@ -240,7 +249,8 @@ impl Engine3D {
                 tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
 
                 // Rasterize triangles
-                pixels_primitives::triangle_filled(
+
+                draw_triangle(
                     frame,
                     WIDTH,
                     tri_projected.p[0].x as i32,
@@ -252,17 +262,17 @@ impl Engine3D {
                     &tri_projected.col,
                 );
 
-                pixels_primitives::triangle(
-                    frame,
-                    WIDTH,
-                    tri_projected.p[0].x as i32,
-                    tri_projected.p[0].y as i32,
-                    tri_projected.p[1].x as i32,
-                    tri_projected.p[1].y as i32,
-                    tri_projected.p[2].x as i32,
-                    tri_projected.p[2].y as i32,
-                    &[0, 0, 0, 0xff],
-                );
+                // pixels_primitives::triangle(
+                //     frame,
+                //     WIDTH,
+                //     tri_projected.p[0].x as i32,
+                //     tri_projected.p[0].y as i32,
+                //     tri_projected.p[1].x as i32,
+                //     tri_projected.p[1].y as i32,
+                //     tri_projected.p[2].x as i32,
+                //     tri_projected.p[2].y as i32,
+                //     &[0, 0, 0, 0xff],
+                // );
             }
         }
     }
