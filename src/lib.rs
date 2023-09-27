@@ -1,4 +1,8 @@
-use std::mem;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    mem,
+};
 
 #[derive(Clone)]
 pub struct Vec3D {
@@ -61,6 +65,50 @@ impl Mesh {
                 col: [0xff, 0xff, 0xff, 0xff],
             })
         }
+        Self { tris }
+    }
+
+    pub fn from_file(filename: &str) -> Self {
+        let mut vecs: Vec<Vec3D> = vec![];
+        let mut tris: Vec<Triangle> = vec![];
+
+        let file = File::open(filename).expect("Error opening file!");
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let line = line.unwrap();
+            let mut line = line.split_ascii_whitespace();
+            let first_char = line.next().unwrap();
+            match first_char {
+                "v" => {
+                    let nums = line
+                        .map(|n| n.parse::<f32>().unwrap())
+                        .collect::<Vec<f32>>();
+                    let vec = Vec3D {
+                        x: nums[0],
+                        y: nums[1],
+                        z: nums[2],
+                    };
+                    vecs.push(vec);
+                }
+                "f" => {
+                    let nums = line
+                        .map(|n| n.parse::<usize>().unwrap() - 1)
+                        .collect::<Vec<usize>>();
+                    let tri = Triangle {
+                        p: [
+                            vecs[nums[0]].clone(),
+                            vecs[nums[1]].clone(),
+                            vecs[nums[2]].clone(),
+                        ],
+                        col: [0xff, 0xff, 0xff, 0xff],
+                    };
+                    tris.push(tri);
+                }
+                _ => {}
+            }
+        }
+
         Self { tris }
     }
 }
@@ -151,8 +199,8 @@ pub fn draw_triangle(
 
     if dy1 != 0 {
         for i in y1..=y2 {
-            let mut ax = x1 + ((i - y1) as f32 * dax_step) as i32;
-            let mut bx = x1 + ((i - y1) as f32 * dbx_step) as i32;
+            let mut ax = (x1 as f32 + (i - y1) as f32 * dax_step) as i32;
+            let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
 
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
@@ -176,8 +224,8 @@ pub fn draw_triangle(
 
     if dy1 != 0 {
         for i in y2..=y3 {
-            let mut ax = x2 + ((i - y2) as f32 * dax_step) as i32;
-            let mut bx = x1 + ((i - y1) as f32 * dbx_step) as i32;
+            let mut ax = (x2 as f32 + (i - y2) as f32 * dax_step) as i32;
+            let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
 
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
