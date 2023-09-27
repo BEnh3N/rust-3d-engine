@@ -1,6 +1,7 @@
 use std::{
     f32::consts::PI,
     time::{Duration, Instant},
+    vec,
 };
 
 use engine_3d::*;
@@ -148,6 +149,8 @@ impl Engine3D {
         mat_rot_x.m[2][2] = half_theta.cos();
         mat_rot_x.m[3][3] = 1.0;
 
+        let mut triangles_to_raster = vec![];
+
         // Draw Triangles
         for tri in &self.mesh_cube.tris {
             // Rotate in Z-Axis
@@ -172,9 +175,9 @@ impl Engine3D {
 
             // Offset into the screen
             let mut tri_translated = tri_rotated_zx.clone();
-            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 3.0;
-            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 3.0;
-            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 3.0;
+            tri_translated.p[0].z = tri_rotated_zx.p[0].z + 8.0;
+            tri_translated.p[1].z = tri_rotated_zx.p[1].z + 8.0;
+            tri_translated.p[2].z = tri_rotated_zx.p[2].z + 8.0;
 
             let line1 = Vec3D {
                 x: tri_translated.p[1].x - tri_translated.p[0].x,
@@ -250,32 +253,43 @@ impl Engine3D {
                 tri_projected.p[2].x *= 0.5 * WIDTH as f32;
                 tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
 
-                // Rasterize triangles
-
-                draw_triangle(
-                    frame,
-                    WIDTH,
-                    tri_projected.p[0].x as i32,
-                    tri_projected.p[0].y as i32,
-                    tri_projected.p[1].x as i32,
-                    tri_projected.p[1].y as i32,
-                    tri_projected.p[2].x as i32,
-                    tri_projected.p[2].y as i32,
-                    &tri_projected.col,
-                );
-
-                // pixels_primitives::triangle(
-                //     frame,
-                //     WIDTH,
-                //     tri_projected.p[0].x as i32,
-                //     tri_projected.p[0].y as i32,
-                //     tri_projected.p[1].x as i32,
-                //     tri_projected.p[1].y as i32,
-                //     tri_projected.p[2].x as i32,
-                //     tri_projected.p[2].y as i32,
-                //     &[0, 0, 0, 0xff],
-                // );
+                // Store triangles for sorting
+                triangles_to_raster.push(tri_projected);
             }
+        }
+
+        // Sort triangles from back to front
+        triangles_to_raster.sort_by(|t1, t2| {
+            let z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0;
+            let z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0;
+            z2.partial_cmp(&z1).unwrap()
+        });
+
+        for tri_projected in triangles_to_raster {
+            // Rasterize triangles
+            draw_triangle(
+                frame,
+                WIDTH,
+                tri_projected.p[0].x as i32,
+                tri_projected.p[0].y as i32,
+                tri_projected.p[1].x as i32,
+                tri_projected.p[1].y as i32,
+                tri_projected.p[2].x as i32,
+                tri_projected.p[2].y as i32,
+                &tri_projected.col,
+            );
+
+            // pixels_primitives::triangle(
+            //     frame,
+            //     WIDTH,
+            //     tri_projected.p[0].x as i32,
+            //     tri_projected.p[0].y as i32,
+            //     tri_projected.p[1].x as i32,
+            //     tri_projected.p[1].y as i32,
+            //     tri_projected.p[2].x as i32,
+            //     tri_projected.p[2].y as i32,
+            //     &[0, 0, 0, 0xff],
+            // );
         }
     }
 }
