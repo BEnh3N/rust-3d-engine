@@ -7,11 +7,11 @@ use engine_3d::{
     draw_triangle, get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_z, make_translation, multiply_matrix,
-        multiply_vector, point_at, quick_inverse, Mat4x4,
+        multiply_vector, point_at, quick_inverse, Mat4x4, make_rotation_y,
     },
     mesh::Mesh,
     triangle::Triangle,
-    vec3d::{cross_product, dot_product, Vec3D},
+    vec3d::{cross_product, dot_product, Vec3D, clip_against_plane},
 };
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -27,13 +27,13 @@ struct Engine3D {
     elapsed_time: Duration,
     theta: f32,
 
-    tris_to_raster: Vec<Triangle>,
-
     mesh_cube: Mesh,
     mat_proj: Mat4x4,
 
     camera: Vec3D,
     look_dir: Vec3D,
+
+    yaw: f32,
 }
 
 fn main() {
@@ -64,8 +64,8 @@ fn main() {
                 control_flow.set_exit();
             }
 
-            engine.update(&input);
-            engine.draw(pixels.frame_mut());
+            let tris_to_raster = engine.update(&input);
+            engine.draw(pixels.frame_mut(), tris_to_raster);
 
             if let Err(e) = pixels.render() {
                 println!("{}", e);
@@ -114,28 +114,46 @@ impl Engine3D {
         Self {
             elapsed_time: Duration::new(0, 0),
             theta: 0.0,
-            tris_to_raster: vec![],
             mesh_cube,
             mat_proj,
             camera,
             look_dir,
+            yaw: 0.0,
         }
     }
 
-    fn update(&mut self, input: &WinitInputHelper) {
+    fn update(&mut self, input: &WinitInputHelper) -> Vec<Triangle> {
+        let elapsed_time = self.elapsed_time.as_secs_f32();
+
         if input.key_held(VirtualKeyCode::Up) {
-            self.camera.y += 8.0 * self.elapsed_time.as_secs_f32();
+            self.camera.y += 8.0 * elapsed_time;
         }
         if input.key_held(VirtualKeyCode::Down) {
-            self.camera.y -= 8.0 * self.elapsed_time.as_secs_f32();
+            self.camera.y -= 8.0 * elapsed_time;
         }
 
         // TODO: Figure out why inputs are reversed
         if input.key_held(VirtualKeyCode::Left) {
-            self.camera.x += 8.0 * self.elapsed_time.as_secs_f32();
+            self.camera.x += 8.0 * elapsed_time;
         }
         if input.key_held(VirtualKeyCode::Right) {
-            self.camera.x -= 8.0 * self.elapsed_time.as_secs_f32();
+            self.camera.x -= 8.0 * elapsed_time;
+        }
+
+        let forward = &self.look_dir * (8.0 * elapsed_time);
+
+        if input.key_held(VirtualKeyCode::W) {
+            self.camera = &self.camera + &forward;
+        }
+        if input.key_held(VirtualKeyCode::S) {
+            self.camera = &self.camera - &forward;
+        }
+
+        if input.key_held(VirtualKeyCode::A) {
+            self.yaw -= 2.0 * elapsed_time;
+        }
+        if input.key_held(VirtualKeyCode::D) {
+            self.yaw += 2.0 * elapsed_time;
         }
 
         // self.theta += 1.0 * self.elapsed_time.as_secs_f32();
@@ -147,9 +165,11 @@ impl Engine3D {
         let mut mat_world = multiply_matrix(&mat_rot_z, &mat_rot_x);
         mat_world = multiply_matrix(&mat_world, &mat_trans);
 
-        self.look_dir = Vec3D::new(0.0, 0.0, 1.0);
         let up = Vec3D::new(0.0, 1.0, 0.0);
-        let target = &self.camera + &self.look_dir;
+        let mut target = Vec3D::new(0.0, 0.0, 1.0);
+        let mat_camera_rot = make_rotation_y(self.yaw);
+        self.look_dir = multiply_vector(&mat_camera_rot, &target);
+        target = &self.camera + &self.look_dir;
 
         let mat_camera = point_at(&self.camera, &target, &up);
 
@@ -157,11 +177,11 @@ impl Engine3D {
         let mat_view = quick_inverse(&mat_camera);
 
         // Store triangles for rastering later
-        self.tris_to_raster.clear();
+        let mut tris_to_raster = vec![];
 
         // Draw Triangles
         for tri in &self.mesh_cube.tris {
-            let mut tri_transformed = Triangle::new(
+            let tri_transformed = Triangle::new(
                 multiply_vector(&mat_world, &tri.p[0]),
                 multiply_vector(&mat_world, &tri.p[1]),
                 multiply_vector(&mat_world, &tri.p[2]),
@@ -192,66 +212,77 @@ impl Engine3D {
 
                 // Choose colors
                 let c = get_color(dp);
-                tri_transformed.col = c;
 
                 // Convert world space --> view space
-                let tri_viewed = Triangle::new(
+                let mut tri_viewed = Triangle::new(
                     multiply_vector(&mat_view, &tri_transformed.p[0]),
                     multiply_vector(&mat_view, &tri_transformed.p[1]),
                     multiply_vector(&mat_view, &tri_transformed.p[2]),
                 );
+                tri_viewed.col = c;
 
-                // Project triangles from 3D --> 2D
-                let mut tri_projected = Triangle::new(
-                    multiply_vector(&self.mat_proj, &tri_viewed.p[0]),
-                    multiply_vector(&self.mat_proj, &tri_viewed.p[1]),
-                    multiply_vector(&self.mat_proj, &tri_viewed.p[2]),
+                // Clip viewed triangle against near plane, this could form two additional
+                // triangles
+                let (clipped_triangles, clipped) = clip_against_plane(
+                    Vec3D::new(0.0, 0.0, 0.1), 
+                    Vec3D::new(0.0, 0.0, 1.0), 
+                    &tri_viewed
                 );
-                tri_projected.col = tri_transformed.col;
 
-                tri_projected.p[0] = &tri_projected.p[0] / tri_projected.p[0].w;
-                tri_projected.p[1] = &tri_projected.p[1] / tri_projected.p[1].w;
-                tri_projected.p[2] = &tri_projected.p[2] / tri_projected.p[2].w;
+                for n in 0..clipped_triangles {
+                    // Project triangles from 3D --> 2D
+                    let mut tri_projected = Triangle::new(
+                        multiply_vector(&self.mat_proj, &clipped[n].p[0]),
+                        multiply_vector(&self.mat_proj, &clipped[n].p[1]),
+                        multiply_vector(&self.mat_proj, &clipped[n].p[2]),
+                    );
+                    tri_projected.col = clipped[n].col;
 
-                // X/Y are inverted so put them back
-                tri_projected.p[0].x *= -1.0;
-                tri_projected.p[1].x *= -1.0;
-                tri_projected.p[2].x *= -1.0;
-                tri_projected.p[0].y *= -1.0;
-                tri_projected.p[1].y *= -1.0;
-                tri_projected.p[2].y *= -1.0;
+                    tri_projected.p[0] = &tri_projected.p[0] / tri_projected.p[0].w;
+                    tri_projected.p[1] = &tri_projected.p[1] / tri_projected.p[1].w;
+                    tri_projected.p[2] = &tri_projected.p[2] / tri_projected.p[2].w;
 
-                // Offset verts into visible normalised space
-                let offset_view = Vec3D::new(1.0, 1.0, 0.0);
-                tri_projected.p[0] = &tri_projected.p[0] + &offset_view;
-                tri_projected.p[1] = &tri_projected.p[1] + &offset_view;
-                tri_projected.p[2] = &tri_projected.p[2] + &offset_view;
+                    // X/Y are inverted so put them back
+                    tri_projected.p[0].x *= -1.0;
+                    tri_projected.p[1].x *= -1.0;
+                    tri_projected.p[2].x *= -1.0;
+                    tri_projected.p[0].y *= -1.0;
+                    tri_projected.p[1].y *= -1.0;
+                    tri_projected.p[2].y *= -1.0;
 
-                tri_projected.p[0].x *= 0.5 * WIDTH as f32;
-                tri_projected.p[0].y *= 0.5 * HEIGHT as f32;
-                tri_projected.p[1].x *= 0.5 * WIDTH as f32;
-                tri_projected.p[1].y *= 0.5 * HEIGHT as f32;
-                tri_projected.p[2].x *= 0.5 * WIDTH as f32;
-                tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
+                    // Offset verts into visible normalised space
+                    let offset_view = Vec3D::new(1.0, 1.0, 0.0);
+                    tri_projected.p[0] = &tri_projected.p[0] + &offset_view;
+                    tri_projected.p[1] = &tri_projected.p[1] + &offset_view;
+                    tri_projected.p[2] = &tri_projected.p[2] + &offset_view;
+                    tri_projected.p[0].x *= 0.5 * WIDTH as f32;
+                    tri_projected.p[0].y *= 0.5 * HEIGHT as f32;
+                    tri_projected.p[1].x *= 0.5 * WIDTH as f32;
+                    tri_projected.p[1].y *= 0.5 * HEIGHT as f32;
+                    tri_projected.p[2].x *= 0.5 * WIDTH as f32;
+                    tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
 
-                // Store triangles for sorting
-                self.tris_to_raster.push(tri_projected);
+                    // Store triangles for sorting
+                    tris_to_raster.push(tri_projected);
+                }
             }
         }
 
         // Sort triangles from back to front
-        self.tris_to_raster.sort_by(|t1, t2| {
+        tris_to_raster.sort_by(|t1, t2| {
             let z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0;
             let z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0;
             z2.partial_cmp(&z1).unwrap()
         });
+
+        tris_to_raster
     }
 
-    fn draw(&self, frame: &mut [u8]) {
+    fn draw(&self, frame: &mut [u8], tris_to_raster: Vec<Triangle>) {
         // Clear screen
         frame.fill(0x00);
 
-        for tri_projected in &self.tris_to_raster {
+        for tri_projected in tris_to_raster {
             // Rasterize triangles
             draw_triangle(
                 frame,
