@@ -6,12 +6,12 @@ use std::{
 use engine_3d::{
     draw_triangle, get_color,
     mat4x4::{
-        make_projection, make_rotation_x, make_rotation_z, make_translation, multiply_matrix,
-        multiply_vector, point_at, quick_inverse, Mat4x4, make_rotation_y,
+        make_projection, make_rotation_x, make_rotation_y, make_rotation_z, make_translation,
+        multiply_matrix, multiply_vector, point_at, quick_inverse, Mat4x4,
     },
     mesh::Mesh,
     triangle::Triangle,
-    vec3d::{cross_product, dot_product, Vec3D, clip_against_plane},
+    vec3d::{clip_against_plane, cross_product, dot_product, Vec3D},
 };
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -224,9 +224,9 @@ impl Engine3D {
                 // Clip viewed triangle against near plane, this could form two additional
                 // triangles
                 let (clipped_triangles, clipped) = clip_against_plane(
-                    Vec3D::new(0.0, 0.0, 0.1), 
-                    Vec3D::new(0.0, 0.0, 1.0), 
-                    &tri_viewed
+                    Vec3D::new(0.0, 0.0, 0.1),
+                    Vec3D::new(0.0, 0.0, 1.0),
+                    &tri_viewed,
                 );
 
                 for n in 0..clipped_triangles {

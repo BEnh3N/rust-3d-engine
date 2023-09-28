@@ -50,7 +50,12 @@ pub fn cross_product(v1: &Vec3D, v2: &Vec3D) -> Vec3D {
     }
 }
 
-pub fn intersect_plane(plane_p: &Vec3D, plane_n: &Vec3D, line_start: &Vec3D, line_end: &Vec3D) -> Vec3D {
+pub fn intersect_plane(
+    plane_p: &Vec3D,
+    plane_n: &Vec3D,
+    line_start: &Vec3D,
+    line_end: &Vec3D,
+) -> Vec3D {
     let plane_n = plane_n.normalise();
     let plane_d = -dot_product(&plane_n, plane_p);
     let ad = dot_product(line_start, &plane_n);
@@ -61,7 +66,11 @@ pub fn intersect_plane(plane_p: &Vec3D, plane_n: &Vec3D, line_start: &Vec3D, lin
     line_start + &line_to_intersect
 }
 
-pub fn clip_against_plane(plane_p: Vec3D, plane_n: Vec3D, tri: &Triangle) -> (usize, [Triangle; 2]) {
+pub fn clip_against_plane(
+    plane_p: Vec3D,
+    plane_n: Vec3D,
+    tri: &Triangle,
+) -> (usize, [Triangle; 2]) {
     // Make sure plane is indeed normal
     let plane_n = plane_n.normalise();
 
@@ -114,14 +123,12 @@ pub fn clip_against_plane(plane_p: Vec3D, plane_n: Vec3D, tri: &Triangle) -> (us
         // It ceases to exist
 
         return (0, [Triangle::empty(), Triangle::empty()]);
-    }
-    else if inside_point_count == 3 {
+    } else if inside_point_count == 3 {
         // All points lie on the inside of plane, so do nothing
         // and allow triangle to simply pass through
 
         return (1, [tri.clone(), Triangle::empty()]);
-    }
-    else if inside_point_count == 1 && outside_point_count == 2 {
+    } else if inside_point_count == 1 && outside_point_count == 2 {
         // Triangle should be clipped. As two points lie outside
         // the plane, the triangle simply becomes a smaller triangle
 
@@ -139,8 +146,7 @@ pub fn clip_against_plane(plane_p: Vec3D, plane_n: Vec3D, tri: &Triangle) -> (us
         out_tri.p[2] = intersect_plane(&plane_p, &plane_n, &inside_points[0], &outside_points[1]);
 
         return (1, [out_tri, Triangle::empty()]);
-    }
-    else {
+    } else {
         // Triangle should be clipped. As two points lie inside the plane,
         // the clipped triangle becomes a "quad". Fortunately, we can
         // represent a quad with two triangles
@@ -158,10 +164,10 @@ pub fn clip_against_plane(plane_p: Vec3D, plane_n: Vec3D, tri: &Triangle) -> (us
         // intersects with the plane
         out_tri1.p[0] = inside_points[0].clone();
         out_tri1.p[1] = inside_points[1].clone();
-        out_tri1.p[2] = intersect_plane(&plane_p, &plane_n, inside_points[0],outside_points[0]);
+        out_tri1.p[2] = intersect_plane(&plane_p, &plane_n, inside_points[0], outside_points[0]);
 
         // The second triangle is composed of one of he inside points, a
-        // new point determined by the intersection of the other side of the 
+        // new point determined by the intersection of the other side of the
         // triangle and the plane, and the newly created point above
         out_tri2.p[0] = inside_points[1].clone();
         out_tri2.p[1] = out_tri1.p[2].clone();
