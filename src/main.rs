@@ -19,9 +19,9 @@ use winit::{
 };
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: i32 = 256;
-const HEIGHT: i32 = 240;
-const SCALE: i32 = 4;
+const WIDTH: i32 = 256 * 4;
+const HEIGHT: i32 = 240 * 4;
+const SCALE: i32 = 1;
 
 struct Engine3D {
     elapsed_time: Duration,
@@ -101,7 +101,7 @@ impl Engine3D {
         //     [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
         // ]);
 
-        let mesh_cube = Mesh::from_file("teapot.obj");
+        let mesh_cube = Mesh::from_file("axis.obj");
 
         let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
 
@@ -117,7 +117,7 @@ impl Engine3D {
     }
 
     fn update(&mut self) {
-        self.theta += 1.0 * self.elapsed_time.as_secs_f32();
+        // self.theta += 1.0 * self.elapsed_time.as_secs_f32();
     }
 
     fn draw(&self, frame: &mut [u8]) {
@@ -180,6 +180,14 @@ impl Engine3D {
                 tri_projected.p[0] = &tri_projected.p[0] / tri_projected.p[0].w;
                 tri_projected.p[1] = &tri_projected.p[1] / tri_projected.p[1].w;
                 tri_projected.p[2] = &tri_projected.p[2] / tri_projected.p[2].w;
+
+                // X/Y are inverted so put them back
+                tri_projected.p[0].x *= -1.0;
+                tri_projected.p[1].x *= -1.0;
+                tri_projected.p[2].x *= -1.0;
+                tri_projected.p[0].y *= -1.0;
+                tri_projected.p[1].y *= -1.0;
+                tri_projected.p[2].y *= -1.0;
 
                 // Offset verts into visible normalised space
                 let offset_view = Vec3D::new(1.0, 1.0, 0.0);
