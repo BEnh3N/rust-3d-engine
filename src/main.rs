@@ -4,7 +4,7 @@ use std::{
 };
 
 use engine_3d::{
-    draw_triangle, get_color,
+    draw_triangle, draw_triangle_fill, get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_y, make_rotation_z, make_translation,
         multiply_matrix, multiply_vector, point_at, quick_inverse, Mat4x4,
@@ -282,31 +282,64 @@ impl Engine3D {
         // Clear screen
         frame.fill(0x00);
 
-        for tri_projected in tris_to_raster {
-            // Rasterize triangles
-            draw_triangle(
-                frame,
-                WIDTH,
-                tri_projected.p[0].x as i32,
-                tri_projected.p[0].y as i32,
-                tri_projected.p[1].x as i32,
-                tri_projected.p[1].y as i32,
-                tri_projected.p[2].x as i32,
-                tri_projected.p[2].y as i32,
-                &tri_projected.col,
-            );
+        for tri_to_raster in tris_to_raster {
+            // Clip triangles against all four screen edges, this could yield
+            // a bunch of triangles
 
-            // pixels_primitives::triangle(
-            //     frame,
-            //     WIDTH,
-            //     tri_projected.p[0].x as i32,
-            //     tri_projected.p[0].y as i32,
-            //     tri_projected.p[1].x as i32,
-            //     tri_projected.p[1].y as i32,
-            //     tri_projected.p[2].x as i32,
-            //     tri_projected.p[2].y as i32,
-            //     &[0, 0, 0, 0xff],
-            // );
+            // Add initial triangle
+            let mut list_triangles = vec![tri_to_raster];
+            let mut new_triangles = 1;
+
+            for p in 0..4 {
+                while new_triangles > 0 {
+                    // Take triangles from front of queue
+                    let test = list_triangles.remove(0);
+                    new_triangles -= 1;
+
+                    // Clip it against a plane. We only need to test each
+                    // subsequent plane, against subsequent new triangles
+                    // as all triangles after a plane clip are guaranteed
+                    // to lie on the inside of the plane. I like how this
+                    // comment is almost completely and utterly justified
+                    let (tris_to_add, clipped) = match p {
+                        0 => clip_against_plane(
+                            Vec3D::new(0.0, 0.0, 0.0),
+                            Vec3D::new(0.0, 1.0, 0.0),
+                            &test,
+                        ),
+                        1 => clip_against_plane(
+                            Vec3D::new(0.0, HEIGHT as f32 - 1.0, 0.0),
+                            Vec3D::new(0.0, -1.0, 0.0),
+                            &test,
+                        ),
+                        2 => clip_against_plane(
+                            Vec3D::new(0.0, 0.0, 0.0),
+                            Vec3D::new(1.0, 0.0, 0.0),
+                            &test,
+                        ),
+                        3 => clip_against_plane(
+                            Vec3D::new(WIDTH as f32 - 1.0, 0.0, 0.0),
+                            Vec3D::new(-1.0, 0.0, 0.0),
+                            &test,
+                        ),
+                        _ => (0, [Triangle::empty(), Triangle::empty()]),
+                    };
+
+                    // Clipping may yield a variable number of triangles, so
+                    // add these new ones to the back of the queue for subsequent
+                    // clipping against next planes
+                    for w in 0..tris_to_add {
+                        list_triangles.push(clipped[w].clone());
+                    }
+                }
+
+                new_triangles = list_triangles.len();
+            }
+
+            for t in list_triangles {
+                draw_triangle_fill(frame, WIDTH, &t);
+                // draw_triangle(frame, WIDTH, &t, &[0x00, 0x00, 0x00, 0xff]);
+            }
         }
     }
 }

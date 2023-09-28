@@ -1,5 +1,7 @@
 use std::mem;
 
+use triangle::Triangle;
+
 pub mod mat4x4;
 pub mod mesh;
 pub mod triangle;
@@ -12,23 +14,13 @@ pub fn get_color(lum: f32) -> [u8; 4] {
     [r, g, b, 0xff]
 }
 
-pub fn draw_triangle(
-    frame: &mut [u8],
-    canvas_width: i32,
-    x1: i32,
-    y1: i32,
-    x2: i32,
-    y2: i32,
-    x3: i32,
-    y3: i32,
-    rgba: &[u8; 4],
-) {
-    let mut x1 = x1;
-    let mut y1 = y1;
-    let mut x2 = x2;
-    let mut y2 = y2;
-    let mut x3 = x3;
-    let mut y3 = y3;
+pub fn draw_triangle_fill(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
+    let mut x1 = tri.p[0].x as i32;
+    let mut y1 = tri.p[0].y as i32;
+    let mut x2 = tri.p[1].x as i32;
+    let mut y2 = tri.p[1].y as i32;
+    let mut x3 = tri.p[2].x as i32;
+    let mut y3 = tri.p[2].y as i32;
 
     let canvas_height = frame.len() as i32 / 4 / canvas_width;
 
@@ -71,7 +63,7 @@ pub fn draw_triangle(
             }
 
             for j in ax..bx {
-                color_position(j, i, canvas_width, canvas_height, frame, rgba)
+                color_position(j, i, canvas_width, canvas_height, frame, &tri.col)
             }
         }
     }
@@ -96,10 +88,24 @@ pub fn draw_triangle(
             }
 
             for j in ax..bx {
-                color_position(j, i, canvas_width, canvas_height, frame, rgba)
+                color_position(j, i, canvas_width, canvas_height, frame, &tri.col)
             }
         }
     }
+}
+
+pub fn draw_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, col: &[u8; 4]) {
+    pixels_primitives::triangle(
+        frame,
+        canvas_width,
+        tri.p[0].x as i32,
+        tri.p[0].y as i32,
+        tri.p[1].x as i32,
+        tri.p[1].y as i32,
+        tri.p[2].x as i32,
+        tri.p[2].y as i32,
+        col,
+    );
 }
 
 fn color_position(
