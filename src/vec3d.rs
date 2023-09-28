@@ -84,7 +84,7 @@ impl std::ops::Sub<&Vec3D> for &Vec3D {
     }
 }
 
-impl std::ops::Mul<f32> for Vec3D {
+impl std::ops::Mul<f32> for &Vec3D {
     type Output = Vec3D;
 
     fn mul(self, rhs: f32) -> Self::Output {

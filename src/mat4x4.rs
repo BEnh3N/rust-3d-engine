@@ -1,5 +1,7 @@
 use std::f32::consts::PI;
 
+use crate::vec3d::{cross_product, dot_product};
+
 use super::vec3d::Vec3D;
 
 #[derive(Debug)]
@@ -33,6 +35,64 @@ pub fn multiply_matrix(m1: &Mat4x4, m2: &Mat4x4) -> Mat4x4 {
                 + m1.m[r][3] * m2.m[3][c];
         }
     }
+    matrix
+}
+
+pub fn point_at(pos: &Vec3D, target: &Vec3D, up: &Vec3D) -> Mat4x4 {
+    // Calculate new forward direction
+    let mut new_forward = target - pos;
+    new_forward = new_forward.normalise();
+
+    // Calculate new up direction
+    let a = &new_forward * dot_product(up, &new_forward);
+    let mut new_up = up - &a;
+    new_up = new_up.normalise();
+
+    // Calculate new right direction
+    let new_right = cross_product(&new_up, &new_forward);
+
+    // Construct dimensioning and translation matrix
+    let mut matrix = Mat4x4::new();
+    matrix.m[0][0] = new_right.x;
+    matrix.m[0][1] = new_right.y;
+    matrix.m[0][2] = new_right.z;
+    matrix.m[0][3] = 0.0;
+    matrix.m[1][0] = new_up.x;
+    matrix.m[1][1] = new_up.y;
+    matrix.m[1][2] = new_up.z;
+    matrix.m[1][3] = 0.0;
+    matrix.m[2][0] = new_forward.x;
+    matrix.m[2][1] = new_forward.y;
+    matrix.m[2][2] = new_forward.z;
+    matrix.m[2][3] = 0.0;
+    matrix.m[3][0] = pos.x;
+    matrix.m[3][1] = pos.y;
+    matrix.m[3][2] = pos.z;
+    matrix.m[3][3] = 1.0;
+    matrix
+}
+
+pub fn quick_inverse(m: &Mat4x4) -> Mat4x4 {
+    let mut matrix = Mat4x4::new();
+    matrix.m[0][0] = m.m[0][0];
+    matrix.m[0][1] = m.m[1][0];
+    matrix.m[0][2] = m.m[2][0];
+    matrix.m[0][3] = 0.0;
+    matrix.m[1][0] = m.m[0][1];
+    matrix.m[1][1] = m.m[1][1];
+    matrix.m[1][2] = m.m[2][1];
+    matrix.m[1][3] = 0.0;
+    matrix.m[2][0] = m.m[0][2];
+    matrix.m[2][1] = m.m[1][2];
+    matrix.m[2][2] = m.m[2][2];
+    matrix.m[2][3] = 0.0;
+    matrix.m[3][0] =
+        -(m.m[3][0] * matrix.m[0][0] + m.m[3][1] * matrix.m[1][0] + m.m[3][2] * matrix.m[2][0]);
+    matrix.m[3][1] =
+        -(m.m[3][0] * matrix.m[0][1] + m.m[3][1] * matrix.m[1][1] + m.m[3][2] * matrix.m[2][1]);
+    matrix.m[3][2] =
+        -(m.m[3][0] * matrix.m[0][2] + m.m[3][1] * matrix.m[1][2] + m.m[3][2] * matrix.m[2][2]);
+    matrix.m[3][3] = 1.0;
     matrix
 }
 

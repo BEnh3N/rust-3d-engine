@@ -7,7 +7,7 @@ use engine_3d::{
     draw_triangle, get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_z, make_translation, multiply_matrix,
-        multiply_vector, Mat4x4,
+        multiply_vector, point_at, quick_inverse, Mat4x4,
     },
     mesh::Mesh,
     triangle::Triangle,
@@ -19,18 +19,21 @@ use winit::{
 };
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: i32 = 256 * 4;
-const HEIGHT: i32 = 240 * 4;
-const SCALE: i32 = 1;
+const WIDTH: i32 = 256;
+const HEIGHT: i32 = 240;
+const SCALE: i32 = 4;
 
 struct Engine3D {
     elapsed_time: Duration,
     theta: f32,
 
+    tris_to_raster: Vec<Triangle>,
+
     mesh_cube: Mesh,
     mat_proj: Mat4x4,
 
     camera: Vec3D,
+    look_dir: Vec3D,
 }
 
 fn main() {
@@ -61,7 +64,7 @@ fn main() {
                 control_flow.set_exit();
             }
 
-            engine.update();
+            engine.update(&input);
             engine.draw(pixels.frame_mut());
 
             if let Err(e) = pixels.render() {
@@ -106,23 +109,36 @@ impl Engine3D {
         let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
 
         let camera = Vec3D::empty();
+        let look_dir = Vec3D::new(0.0, 0.0, -1.0);
 
         Self {
             elapsed_time: Duration::new(0, 0),
             theta: 0.0,
+            tris_to_raster: vec![],
             mesh_cube,
             mat_proj,
             camera,
+            look_dir,
         }
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, input: &WinitInputHelper) {
+        if input.key_held(VirtualKeyCode::Up) {
+            self.camera.y += 8.0 * self.elapsed_time.as_secs_f32();
+        }
+        if input.key_held(VirtualKeyCode::Down) {
+            self.camera.y -= 8.0 * self.elapsed_time.as_secs_f32();
+        }
+
+        // TODO: Figure out why inputs are reversed
+        if input.key_held(VirtualKeyCode::Left) {
+            self.camera.x += 8.0 * self.elapsed_time.as_secs_f32();
+        }
+        if input.key_held(VirtualKeyCode::Right) {
+            self.camera.x -= 8.0 * self.elapsed_time.as_secs_f32();
+        }
+
         // self.theta += 1.0 * self.elapsed_time.as_secs_f32();
-    }
-
-    fn draw(&self, frame: &mut [u8]) {
-        frame.fill(0x00);
-
         let mat_rot_z = make_rotation_z(self.theta * 0.5);
         let mat_rot_x = make_rotation_x(self.theta);
 
@@ -131,7 +147,17 @@ impl Engine3D {
         let mut mat_world = multiply_matrix(&mat_rot_z, &mat_rot_x);
         mat_world = multiply_matrix(&mat_world, &mat_trans);
 
-        let mut triangles_to_raster = vec![];
+        self.look_dir = Vec3D::new(0.0, 0.0, 1.0);
+        let up = Vec3D::new(0.0, 1.0, 0.0);
+        let target = &self.camera + &self.look_dir;
+
+        let mat_camera = point_at(&self.camera, &target, &up);
+
+        // Make view matrix from camera
+        let mat_view = quick_inverse(&mat_camera);
+
+        // Store triangles for rastering later
+        self.tris_to_raster.clear();
 
         // Draw Triangles
         for tri in &self.mesh_cube.tris {
@@ -142,7 +168,6 @@ impl Engine3D {
             );
 
             // Calculate triangle normal
-
             // Get lines on either side of triangle
             let line1 = &tri_transformed.p[1] - &tri_transformed.p[0];
             let line2 = &tri_transformed.p[2] - &tri_transformed.p[0];
@@ -169,11 +194,18 @@ impl Engine3D {
                 let c = get_color(dp);
                 tri_transformed.col = c;
 
+                // Convert world space --> view space
+                let tri_viewed = Triangle::new(
+                    multiply_vector(&mat_view, &tri_transformed.p[0]),
+                    multiply_vector(&mat_view, &tri_transformed.p[1]),
+                    multiply_vector(&mat_view, &tri_transformed.p[2]),
+                );
+
                 // Project triangles from 3D --> 2D
                 let mut tri_projected = Triangle::new(
-                    multiply_vector(&self.mat_proj, &tri_transformed.p[0]),
-                    multiply_vector(&self.mat_proj, &tri_transformed.p[1]),
-                    multiply_vector(&self.mat_proj, &tri_transformed.p[2]),
+                    multiply_vector(&self.mat_proj, &tri_viewed.p[0]),
+                    multiply_vector(&self.mat_proj, &tri_viewed.p[1]),
+                    multiply_vector(&self.mat_proj, &tri_viewed.p[2]),
                 );
                 tri_projected.col = tri_transformed.col;
 
@@ -203,18 +235,23 @@ impl Engine3D {
                 tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
 
                 // Store triangles for sorting
-                triangles_to_raster.push(tri_projected);
+                self.tris_to_raster.push(tri_projected);
             }
         }
 
         // Sort triangles from back to front
-        triangles_to_raster.sort_by(|t1, t2| {
+        self.tris_to_raster.sort_by(|t1, t2| {
             let z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0;
             let z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0;
             z2.partial_cmp(&z1).unwrap()
         });
+    }
 
-        for tri_projected in triangles_to_raster {
+    fn draw(&self, frame: &mut [u8]) {
+        // Clear screen
+        frame.fill(0x00);
+
+        for tri_projected in &self.tris_to_raster {
             // Rasterize triangles
             draw_triangle(
                 frame,
