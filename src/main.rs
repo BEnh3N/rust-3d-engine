@@ -38,10 +38,14 @@ struct Engine3D {
     yaw: f64,
 
     spr_tex: DynamicImage,
+    
+    depth_buffer: [f64; (WIDTH * HEIGHT) as usize],
 }
 
 impl Engine3D {
     fn new() -> Self {
+        let depth_buffer = [0.0; (WIDTH * HEIGHT) as usize];
+
         // let mesh_cube = Mesh::new(vec![
         //     // SOUTH
         //     [
@@ -88,7 +92,10 @@ impl Engine3D {
         // ]);
 
         let mesh_cube = Mesh::from_file("models/spyro_level.obj", true);
-        let spr_tex = Reader::open("spyro_low.png").unwrap().decode().unwrap();
+        let spr_tex = Reader::open("textures/spyro_high.png")
+            .unwrap()
+            .decode()
+            .unwrap();
 
         let mat_proj = make_projection(90.0, HEIGHT as f64 / WIDTH as f64, 0.1, 1000.0);
 
@@ -101,6 +108,7 @@ impl Engine3D {
             look_dir: Vec3D::empty(),
             yaw: 0.0,
             spr_tex,
+            depth_buffer,
         }
     }
 
@@ -282,7 +290,9 @@ impl Engine3D {
 
     fn draw(&self, frame: &mut [u8], tris_to_raster: Vec<Triangle>) {
         // Clear screen
-        frame.fill(0x00);
+        for pixel in frame.chunks_exact_mut(4) {
+            pixel.copy_from_slice(&[107, 229, 252, 0xff]);
+        }
 
         for tri_to_raster in tris_to_raster {
             // Clip triangles against all four screen edges, this could yield
@@ -324,7 +334,7 @@ impl Engine3D {
                             Vec3D::new(-1.0, 0.0, 0.0),
                             &test,
                         ),
-                        _ => (0, [Triangle::empty(), Triangle::empty()]),
+                        _ => (0, [Triangle::empty(); 2]),
                     };
 
                     // Clipping may yield a variable number of triangles, so
