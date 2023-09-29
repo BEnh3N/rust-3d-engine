@@ -27,7 +27,7 @@ const SCALE: i32 = 4;
 
 struct Engine3D {
     elapsed_time: Duration,
-    theta: f32,
+    theta: f64,
 
     mesh_cube: Mesh,
     mat_proj: Mat4x4,
@@ -35,7 +35,7 @@ struct Engine3D {
     camera: Vec3D,
     look_dir: Vec3D,
 
-    yaw: f32,
+    yaw: f64,
 
     spr_tex: DynamicImage,
 }
@@ -91,7 +91,7 @@ impl Engine3D {
 
         // let mesh_cube = Mesh::from_file("models/mountains.obj");
 
-        let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
+        let mat_proj = make_projection(90.0, HEIGHT as f64 / WIDTH as f64, 0.1, 1000.0);
 
         Self {
             elapsed_time: Duration::new(0, 0),
@@ -106,7 +106,7 @@ impl Engine3D {
     }
 
     fn update(&mut self, input: &WinitInputHelper) -> Vec<Triangle> {
-        let elapsed_time = self.elapsed_time.as_secs_f32();
+        let elapsed_time = self.elapsed_time.as_secs_f64();
 
         if input.key_held(VirtualKeyCode::Up) || input.key_held(VirtualKeyCode::Space) {
             self.camera.y += 8.0 * elapsed_time;
@@ -138,7 +138,7 @@ impl Engine3D {
             self.yaw += 2.0 * elapsed_time;
         }
 
-        // self.theta += 1.0 * self.elapsed_time.as_secs_f32();
+        // self.theta += 1.0 * self.elapsed_time.as_secs_f64();
         let mat_rot_z = make_rotation_z(self.theta * 0.5);
         let mat_rot_x = make_rotation_x(self.theta);
 
@@ -246,12 +246,12 @@ impl Engine3D {
                     tri_projected.p[0] = &tri_projected.p[0] + &offset_view;
                     tri_projected.p[1] = &tri_projected.p[1] + &offset_view;
                     tri_projected.p[2] = &tri_projected.p[2] + &offset_view;
-                    tri_projected.p[0].x *= 0.5 * WIDTH as f32;
-                    tri_projected.p[0].y *= 0.5 * HEIGHT as f32;
-                    tri_projected.p[1].x *= 0.5 * WIDTH as f32;
-                    tri_projected.p[1].y *= 0.5 * HEIGHT as f32;
-                    tri_projected.p[2].x *= 0.5 * WIDTH as f32;
-                    tri_projected.p[2].y *= 0.5 * HEIGHT as f32;
+                    tri_projected.p[0].x *= 0.5 * WIDTH as f64;
+                    tri_projected.p[0].y *= 0.5 * HEIGHT as f64;
+                    tri_projected.p[1].x *= 0.5 * WIDTH as f64;
+                    tri_projected.p[1].y *= 0.5 * HEIGHT as f64;
+                    tri_projected.p[2].x *= 0.5 * WIDTH as f64;
+                    tri_projected.p[2].y *= 0.5 * HEIGHT as f64;
 
                     // Store triangles for sorting
                     tris_to_raster.push(tri_projected);
@@ -299,7 +299,7 @@ impl Engine3D {
                             &test,
                         ),
                         1 => clip_against_plane(
-                            Vec3D::new(0.0, HEIGHT as f32 - 1.0, 0.0),
+                            Vec3D::new(0.0, HEIGHT as f64 - 1.0, 0.0),
                             Vec3D::new(0.0, -1.0, 0.0),
                             &test,
                         ),
@@ -309,7 +309,7 @@ impl Engine3D {
                             &test,
                         ),
                         3 => clip_against_plane(
-                            Vec3D::new(WIDTH as f32 - 1.0, 0.0, 0.0),
+                            Vec3D::new(WIDTH as f64 - 1.0, 0.0, 0.0),
                             Vec3D::new(-1.0, 0.0, 0.0),
                             &test,
                         ),
@@ -375,7 +375,7 @@ fn main() {
             engine.elapsed_time = last_frame_time.elapsed();
             last_frame_time = Instant::now();
 
-            let fps = 1.0 / engine.elapsed_time.as_secs_f32();
+            let fps = 1.0 / engine.elapsed_time.as_secs_f64();
             window.set_title(&format!("Engine 3D - FPS: {:.0}", fps));
         }
     })

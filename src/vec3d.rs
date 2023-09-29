@@ -2,14 +2,14 @@ use crate::{triangle::Triangle, vec2d::Vec2D};
 
 #[derive(Clone, Copy)]
 pub struct Vec3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 impl Vec3D {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z, w: 1.0 }
     }
 
@@ -33,11 +33,11 @@ impl Vec3D {
     }
 }
 
-pub fn dot_product(v1: &Vec3D, v2: &Vec3D) -> f32 {
+pub fn dot_product(v1: &Vec3D, v2: &Vec3D) -> f64 {
     v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 }
 
-pub fn length(v: &Vec3D) -> f32 {
+pub fn length(v: &Vec3D) -> f64 {
     dot_product(v, v).sqrt()
 }
 
@@ -55,7 +55,7 @@ pub fn intersect_plane(
     plane_n: &Vec3D,
     line_start: &Vec3D,
     line_end: &Vec3D,
-    t: &mut f32,
+    t: &mut f64,
 ) -> Vec3D {
     let plane_n = plane_n.normalise();
     let plane_d = -dot_product(&plane_n, plane_p);
@@ -76,7 +76,7 @@ pub fn clip_against_plane(
     let plane_n = plane_n.normalise();
 
     // Return signed shortest distance from point to plane, plane normal must be normalised
-    let dist = |p: &Vec3D| -> f32 {
+    let dist = |p: &Vec3D| -> f64 {
         plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - dot_product(&plane_n, &plane_p)
     };
 
@@ -258,10 +258,10 @@ impl std::ops::Sub<&Vec3D> for &Vec3D {
     }
 }
 
-impl std::ops::Mul<f32> for &Vec3D {
+impl std::ops::Mul<f64> for &Vec3D {
     type Output = Vec3D;
 
-    fn mul(self, rhs: f32) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         Vec3D {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -271,10 +271,10 @@ impl std::ops::Mul<f32> for &Vec3D {
     }
 }
 
-impl std::ops::Div<f32> for &Vec3D {
+impl std::ops::Div<f64> for &Vec3D {
     type Output = Vec3D;
 
-    fn div(self, rhs: f32) -> Self::Output {
+    fn div(self, rhs: f64) -> Self::Output {
         Vec3D {
             x: self.x / rhs,
             y: self.y / rhs,

@@ -10,7 +10,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(tri_list: Vec<[f32; 15]>) -> Self {
+    pub fn new(tri_list: Vec<[f64; 15]>) -> Self {
         let mut tris = vec![];
         for tri in tri_list {
             tris.push(Triangle::new_uv(
@@ -39,8 +39,8 @@ impl Mesh {
                 match c {
                     "v" => {
                         let nums = line
-                            .map(|n| n.parse::<f32>().unwrap())
-                            .collect::<Vec<f32>>();
+                            .map(|n| n.parse::<f64>().unwrap())
+                            .collect::<Vec<f64>>();
                         let vec = Vec3D::new(nums[0], nums[1], nums[2]);
                         vecs.push(vec);
                     }

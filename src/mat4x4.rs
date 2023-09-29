@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use crate::vec3d::{cross_product, dot_product};
 
@@ -6,7 +6,7 @@ use super::vec3d::Vec3D;
 
 #[derive(Debug)]
 pub struct Mat4x4 {
-    pub m: [[f32; 4]; 4],
+    pub m: [[f64; 4]; 4],
 }
 
 impl Mat4x4 {
@@ -105,7 +105,7 @@ pub fn make_identity() -> Mat4x4 {
     matrix
 }
 
-pub fn make_rotation_x(angle: f32) -> Mat4x4 {
+pub fn make_rotation_x(angle: f64) -> Mat4x4 {
     let mut matrix = Mat4x4::new();
     matrix.m[0][0] = 1.0;
     matrix.m[1][1] = angle.cos();
@@ -116,7 +116,7 @@ pub fn make_rotation_x(angle: f32) -> Mat4x4 {
     matrix
 }
 
-pub fn make_rotation_y(angle: f32) -> Mat4x4 {
+pub fn make_rotation_y(angle: f64) -> Mat4x4 {
     let mut matrix = Mat4x4::new();
     matrix.m[0][0] = angle.cos();
     matrix.m[0][2] = angle.sin();
@@ -127,7 +127,7 @@ pub fn make_rotation_y(angle: f32) -> Mat4x4 {
     matrix
 }
 
-pub fn make_rotation_z(angle: f32) -> Mat4x4 {
+pub fn make_rotation_z(angle: f64) -> Mat4x4 {
     let mut matrix = Mat4x4::new();
     matrix.m[0][0] = angle.cos();
     matrix.m[0][1] = angle.sin();
@@ -138,7 +138,7 @@ pub fn make_rotation_z(angle: f32) -> Mat4x4 {
     matrix
 }
 
-pub fn make_translation(x: f32, y: f32, z: f32) -> Mat4x4 {
+pub fn make_translation(x: f64, y: f64, z: f64) -> Mat4x4 {
     let mut matrix = Mat4x4::new();
     matrix.m[0][0] = 1.0;
     matrix.m[1][1] = 1.0;
@@ -150,7 +150,7 @@ pub fn make_translation(x: f32, y: f32, z: f32) -> Mat4x4 {
     matrix
 }
 
-pub fn make_projection(fov: f32, aspect_ratio: f32, near: f32, far: f32) -> Mat4x4 {
+pub fn make_projection(fov: f64, aspect_ratio: f64, near: f64, far: f64) -> Mat4x4 {
     let fov_rad = 1.0 / (fov * 0.5 / 180.0 * PI).tan();
     let mut matrix = Mat4x4::new();
     matrix.m[0][0] = aspect_ratio * fov_rad;

@@ -1,11 +1,11 @@
 #[derive(Clone, Copy)]
 pub struct Vec2D {
-    pub u: f32,
-    pub v: f32,
+    pub u: f64,
+    pub v: f64,
 }
 
 impl Vec2D {
-    pub fn new(u: f32, v: f32) -> Self {
+    pub fn new(u: f64, v: f64) -> Self {
         Self { u, v }
     }
 

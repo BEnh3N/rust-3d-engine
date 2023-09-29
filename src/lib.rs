@@ -9,7 +9,7 @@ pub mod triangle;
 pub mod vec2d;
 pub mod vec3d;
 
-pub fn get_color(lum: f32) -> [u8; 4] {
+pub fn get_color(lum: f64) -> [u8; 4] {
     let r = (lum * 255.0) as u8;
     let g = (lum * 255.0) as u8;
     let b = (lum * 255.0) as u8;
@@ -31,8 +31,8 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
     let mut u3 = tri.t[2].u;
     let mut v3 = tri.t[2].v;
 
-    let tex_width = (tex.width() - 1) as f32;
-    let tex_height = (tex.height() - 1) as f32;
+    let tex_width = (tex.width() - 1) as f64;
+    let tex_height = (tex.height() - 1) as f64;
 
     let canvas_height = frame.len() as i32 / 4 / canvas_width;
 
@@ -76,36 +76,36 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
     let mut dv2_step = 0.0;
 
     if dy1 != 0 {
-        dax_step = dx1 as f32 / dy1.abs() as f32;
+        dax_step = dx1 as f64 / dy1.abs() as f64;
     }
     if dy2 != 0 {
-        dbx_step = dx2 as f32 / dy2.abs() as f32;
+        dbx_step = dx2 as f64 / dy2.abs() as f64;
     }
 
     if dy1 != 0 {
-        du1_step = du1 / dy1.abs() as f32;
+        du1_step = du1 / dy1.abs() as f64;
     }
     if dy1 != 0 {
-        dv1_step = dv1 / dy1.abs() as f32;
+        dv1_step = dv1 / dy1.abs() as f64;
     }
 
     if dy2 != 0 {
-        du2_step = du2 / dy2.abs() as f32;
+        du2_step = du2 / dy2.abs() as f64;
     }
     if dy2 != 0 {
-        dv2_step = dv2 / dy2.abs() as f32;
+        dv2_step = dv2 / dy2.abs() as f64;
     }
 
     if dy1 != 0 {
         for i in y1..=y2 {
-            let mut ax = (x1 as f32 + (i - y1) as f32 * dax_step) as i32;
-            let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
+            let mut ax = (x1 as f64 + (i - y1) as f64 * dax_step) as i32;
+            let mut bx = (x1 as f64 + (i - y1) as f64 * dbx_step) as i32;
 
-            let mut tex_su = u1 + (i - y1) as f32 * du1_step;
-            let mut tex_sv = v1 + (i - y1) as f32 * dv1_step;
+            let mut tex_su = u1 + (i - y1) as f64 * du1_step;
+            let mut tex_sv = v1 + (i - y1) as f64 * dv1_step;
 
-            let mut tex_eu = u1 + (i - y1) as f32 * du2_step;
-            let mut tex_ev = v1 + (i - y1) as f32 * dv2_step;
+            let mut tex_eu = u1 + (i - y1) as f64 * du2_step;
+            let mut tex_ev = v1 + (i - y1) as f64 * dv2_step;
 
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
@@ -116,7 +116,7 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
             // tex_u = tex_su;
             // tex_v = tex_sv;
 
-            let t_step = 1.0 / (bx - ax) as f32;
+            let t_step = 1.0 / (bx - ax) as f64;
             let mut t = 0.0;
 
             for j in ax..bx {
@@ -140,29 +140,29 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
     du1 = u3 - u2;
 
     if dy1 != 0 {
-        dax_step = dx1 as f32 / dy1.abs() as f32;
+        dax_step = dx1 as f64 / dy1.abs() as f64;
     }
     if dy2 != 0 {
-        dbx_step = dx2 as f32 / dy2.abs() as f32;
+        dbx_step = dx2 as f64 / dy2.abs() as f64;
     }
 
     if dy1 != 0 {
-        du1_step = du1 / dy1.abs() as f32;
+        du1_step = du1 / dy1.abs() as f64;
     }
     if dy1 != 0 {
-        dv1_step = dv1 / dy1.abs() as f32;
+        dv1_step = dv1 / dy1.abs() as f64;
     }
 
     if dy1 != 0 {
         for i in y2..=y3 {
-            let mut ax = (x2 as f32 + (i - y2) as f32 * dax_step) as i32;
-            let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
+            let mut ax = (x2 as f64 + (i - y2) as f64 * dax_step) as i32;
+            let mut bx = (x1 as f64 + (i - y1) as f64 * dbx_step) as i32;
 
-            let mut tex_su = u2 + (i - y2) as f32 * du1_step;
-            let mut tex_sv = v2 + (i - y2) as f32 * dv1_step;
+            let mut tex_su = u2 + (i - y2) as f64 * du1_step;
+            let mut tex_sv = v2 + (i - y2) as f64 * dv1_step;
 
-            let mut tex_eu = u1 + (i - y1) as f32 * du2_step;
-            let mut tex_ev = v1 + (i - y1) as f32 * dv2_step;
+            let mut tex_eu = u1 + (i - y1) as f64 * du2_step;
+            let mut tex_ev = v1 + (i - y1) as f64 * dv2_step;
 
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
@@ -173,7 +173,7 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
             // tex_u = tex_su;
             // tex_v = tex_sv;
 
-            let t_step = 1.0 / (bx - ax) as f32;
+            let t_step = 1.0 / (bx - ax) as f64;
             let mut t = 0.0;
 
             for j in ax..bx {
