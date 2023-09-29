@@ -4,7 +4,7 @@ use std::{
 };
 
 use engine_3d::{
-    draw_triangle, get_color,
+    get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_y, make_rotation_z, make_translation,
         multiply_matrix, multiply_vector, point_at, quick_inverse, Mat4x4,

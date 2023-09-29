@@ -16,7 +16,13 @@ pub fn get_color(lum: f64) -> [u8; 4] {
     [r, g, b, 0xff]
 }
 
-pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, tex: &DynamicImage, depth_buffer: &mut [f64]) {
+pub fn textured_triangle(
+    frame: &mut [u8],
+    canvas_width: i32,
+    tri: &Triangle,
+    tex: &DynamicImage,
+    depth_buffer: &mut [f64],
+) {
     let mut x1 = tri.p[0].x as i32;
     let mut y1 = tri.p[0].y as i32;
     let mut x2 = tri.p[1].x as i32;
@@ -154,7 +160,7 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
                     color_position(j, i, canvas_width, canvas_height, frame, &rgba);
                     depth_buffer[(i * canvas_width + j) as usize] = tex_w;
                 }
-                
+
                 t += t_step;
             }
         }

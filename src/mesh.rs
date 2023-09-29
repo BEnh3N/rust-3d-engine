@@ -75,12 +75,16 @@ impl Mesh {
         let mut texs: Vec<Vec2D> = vec![];
         let mut tris: Vec<Triangle> = vec![];
 
+        let mut x_a = 0.0;
+        let mut y_a = 0.0;
+        let mut z_a = 0.0;
+
         let file = File::open(filename).expect("Error opening file!");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
             let line = line.unwrap();
-            let mut line = line.split_ascii_whitespace();
+            let mut line = line.split_ascii_whitespace();            
             if let Some(c) = line.next() {
                 match c {
                     "v" => {
@@ -88,6 +92,9 @@ impl Mesh {
                             .map(|n| n.parse::<f64>().unwrap())
                             .collect::<Vec<f64>>();
                         let vert = Vec3D::new(nums[0], nums[1], nums[2]);
+                        x_a += nums[0];
+                        y_a += nums[1];
+                        z_a += nums[2];
                         verts.push(vert);
                     }
                     "vt" => {
@@ -150,6 +157,18 @@ impl Mesh {
                     }
                     _ => {}
                 }
+            }
+        }
+
+        let x_a = x_a / verts.len() as f64;
+        let y_a = y_a / verts.len() as f64;
+        let z_a = z_a / verts.len() as f64;
+
+        for tri in &mut tris {
+            for vec in &mut tri.p {
+                vec.x -= x_a;
+                vec.y -= y_a;
+                vec.z -= z_a;
             }
         }
 
