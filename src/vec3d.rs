@@ -124,12 +124,12 @@ pub fn clip_against_plane(
         inside_points[inside_point_count] = tri.p[2];
         inside_point_count += 1;
         inside_tex[inside_tex_count] = tri.t[2];
-        inside_tex_count += 1;
+        // inside_tex_count += 1;
     } else {
         outside_points[outside_point_count] = tri.p[2];
         outside_point_count += 1;
         outside_tex[outside_tex_count] = tri.t[2];
-        outside_tex_count += 1;
+        // outside_tex_count += 1;
     }
 
     // Now classify triangle points, and break the input triangle into
@@ -169,6 +169,7 @@ pub fn clip_against_plane(
         );
         out_tri.t[1].u = t * (outside_tex[0].u - inside_tex[0].u) + inside_tex[0].u;
         out_tri.t[1].v = t * (outside_tex[0].v - inside_tex[0].v) + inside_tex[0].v;
+        out_tri.t[1].w = t * (outside_tex[0].w - inside_tex[0].w) + inside_tex[0].w;
 
         out_tri.p[2] = intersect_plane(
             &plane_p,
@@ -177,8 +178,10 @@ pub fn clip_against_plane(
             &outside_points[1],
             &mut t,
         );
+
         out_tri.t[2].u = t * (outside_tex[1].u - inside_tex[0].u) + inside_tex[0].u;
         out_tri.t[2].v = t * (outside_tex[1].v - inside_tex[0].v) + inside_tex[0].v;
+        out_tri.t[2].w = t * (outside_tex[1].w - inside_tex[0].w) + inside_tex[0].w;
 
         return (1, [out_tri, Triangle::empty()]);
     } else {
@@ -210,6 +213,7 @@ pub fn clip_against_plane(
         );
         out_tri1.t[2].u = t * (outside_tex[0].u - inside_tex[0].u) + inside_tex[0].u;
         out_tri1.t[2].v = t * (outside_tex[0].v - inside_tex[0].v) + inside_tex[0].v;
+        out_tri1.t[2].w = t * (outside_tex[0].w - inside_tex[0].w) + inside_tex[0].w;
 
         // The second triangle is composed of one of the inside points, a
         // new point determined by the intersection of the other side of the
@@ -227,6 +231,7 @@ pub fn clip_against_plane(
         );
         out_tri2.t[2].u = t * (outside_tex[0].u - inside_tex[1].u) + inside_tex[1].u;
         out_tri2.t[2].v = t * (outside_tex[0].v - inside_tex[1].v) + inside_tex[1].v;
+        out_tri2.t[2].w = t * (outside_tex[0].w - inside_tex[1].w) + inside_tex[1].w;
 
         return (2, [out_tri1, out_tri2]); // Return two newly formed triangles which form a quad
     }

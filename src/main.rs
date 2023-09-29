@@ -138,7 +138,7 @@ impl Engine3D {
             self.yaw += 2.0 * elapsed_time;
         }
 
-        // self.theta += 1.0 * self.elapsed_time.as_secs_f64();
+        self.theta += 1.0 * self.elapsed_time.as_secs_f64();
         let mat_rot_z = make_rotation_z(self.theta * 0.5);
         let mat_rot_x = make_rotation_x(self.theta);
 
@@ -228,6 +228,18 @@ impl Engine3D {
                         clipped[n].t[2],
                     );
                     tri_projected.col = clipped[n].col;
+
+                    tri_projected.t[0].u /= tri_projected.p[0].w;
+                    tri_projected.t[1].u /= tri_projected.p[1].w;
+                    tri_projected.t[2].u /= tri_projected.p[2].w;
+
+                    tri_projected.t[0].v /= tri_projected.p[0].w;
+                    tri_projected.t[1].v /= tri_projected.p[1].w;
+                    tri_projected.t[2].v /= tri_projected.p[2].w;
+
+                    tri_projected.t[0].w = 1.0 / tri_projected.p[0].w;
+                    tri_projected.t[1].w = 1.0 / tri_projected.p[1].w;
+                    tri_projected.t[2].w = 1.0 / tri_projected.p[2].w;
 
                     tri_projected.p[0] = &tri_projected.p[0] / tri_projected.p[0].w;
                     tri_projected.p[1] = &tri_projected.p[1] / tri_projected.p[1].w;
