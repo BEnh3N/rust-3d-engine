@@ -59,7 +59,7 @@ impl Engine3D {
         //     [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
         // ]);
 
-        let mesh_cube = Mesh::from_file("mountains.obj");
+        let mesh_cube = Mesh::from_file("models/mountains.obj");
 
         let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
 
