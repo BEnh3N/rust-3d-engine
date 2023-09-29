@@ -38,59 +38,10 @@ struct Engine3D {
     yaw: f64,
 
     spr_tex: DynamicImage,
-    
-    depth_buffer: [f64; (WIDTH * HEIGHT) as usize],
 }
 
 impl Engine3D {
     fn new() -> Self {
-        let depth_buffer = [0.0; (WIDTH * HEIGHT) as usize];
-
-        // let mesh_cube = Mesh::new(vec![
-        //     // SOUTH
-        //     [
-        //         0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        //     // EAST
-        //     [
-        //         1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        //     // NORTH
-        //     [
-        //         1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        //     // WEST
-        //     [
-        //         0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        //     // TOP
-        //     [
-        //         0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        //     // BOTTOM
-        //     [
-        //         1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-        //     ],
-        //     [
-        //         1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-        //     ],
-        // ]);
-
         let mesh_cube = Mesh::from_file("models/spyro_level.obj", true);
         let spr_tex = Reader::open("textures/spyro_high.png")
             .unwrap()
@@ -108,7 +59,6 @@ impl Engine3D {
             look_dir: Vec3D::empty(),
             yaw: 0.0,
             spr_tex,
-            depth_buffer,
         }
     }
 
@@ -279,11 +229,11 @@ impl Engine3D {
         }
 
         // Sort triangles from back to front
-        tris_to_raster.sort_by(|t1, t2| {
-            let z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0;
-            let z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0;
-            z2.partial_cmp(&z1).unwrap()
-        });
+        // tris_to_raster.sort_by(|t1, t2| {
+        //     let z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0;
+        //     let z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0;
+        //     z2.partial_cmp(&z1).unwrap()
+        // });
 
         tris_to_raster
     }
@@ -293,6 +243,8 @@ impl Engine3D {
         for pixel in frame.chunks_exact_mut(4) {
             pixel.copy_from_slice(&[107, 229, 252, 0xff]);
         }
+
+        let mut depth_buffer = [0.0; (WIDTH * HEIGHT) as usize];
 
         for tri_to_raster in tris_to_raster {
             // Clip triangles against all four screen edges, this could yield
@@ -348,12 +300,19 @@ impl Engine3D {
                 new_triangles = list_triangles.len();
             }
 
+            // Draw triangles
             for t in list_triangles {
                 // fill_triangle(frame, WIDTH, &t);
-                textured_triangle(frame, WIDTH, &t, &self.spr_tex);
+                textured_triangle(frame, WIDTH, &t, &self.spr_tex, &mut depth_buffer);
                 // draw_triangle(frame, WIDTH, &t, &[255, 255, 255, 0xff]);
             }
         }
+
+        // Draw depth buffer to screen
+        // for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
+        //     let c = ((depth_buffer[i] * 4.0).tanh() * 255.0) as u8;
+        //     pixel.copy_from_slice(&[c, c, c, 0xff]);
+        // }
     }
 }
 

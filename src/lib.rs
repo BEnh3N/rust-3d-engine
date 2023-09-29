@@ -16,7 +16,7 @@ pub fn get_color(lum: f64) -> [u8; 4] {
     [r, g, b, 0xff]
 }
 
-pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, tex: &DynamicImage) {
+pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, tex: &DynamicImage, depth_buffer: &mut [f64]) {
     let mut x1 = tri.p[0].x as i32;
     let mut y1 = tri.p[0].y as i32;
     let mut x2 = tri.p[1].x as i32;
@@ -144,15 +144,17 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
                 let tex_v = (1.0 - t) * tex_sv + t * tex_ev;
                 let tex_w = (1.0 - t) * tex_sw + t * tex_ew;
 
-                let rgba = tex
-                    .get_pixel(
-                        (tex_u / tex_w * tex_width) as u32,
-                        (tex_v / tex_w * tex_height) as u32 as u32,
-                    )
-                    .0;
-
-                color_position(j, i, canvas_width, canvas_height, frame, &rgba);
-
+                if tex_w > depth_buffer[(i * canvas_width + j) as usize] {
+                    let rgba = tex
+                        .get_pixel(
+                            (tex_u / tex_w * tex_width) as u32,
+                            (tex_v / tex_w * tex_height) as u32 as u32,
+                        )
+                        .0;
+                    color_position(j, i, canvas_width, canvas_height, frame, &rgba);
+                    depth_buffer[(i * canvas_width + j) as usize] = tex_w;
+                }
+                
                 t += t_step;
             }
         }
@@ -212,14 +214,16 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
                 let tex_v = (1.0 - t) * tex_sv + t * tex_ev;
                 let tex_w = (1.0 - t) * tex_sw + t * tex_ew;
 
-                let rgba = tex
-                    .get_pixel(
-                        (tex_u / tex_w * tex_width) as u32,
-                        (tex_v / tex_w * tex_height) as u32,
-                    )
-                    .0;
-
-                color_position(j, i, canvas_width, canvas_height, frame, &rgba);
+                if tex_w > depth_buffer[(i * canvas_width + j) as usize] {
+                    let rgba = tex
+                        .get_pixel(
+                            (tex_u / tex_w * tex_width) as u32,
+                            (tex_v / tex_w * tex_height) as u32,
+                        )
+                        .0;
+                    color_position(j, i, canvas_width, canvas_height, frame, &rgba);
+                    depth_buffer[(i * canvas_width + j) as usize] = tex_w;
+                }
 
                 t += t_step;
             }
