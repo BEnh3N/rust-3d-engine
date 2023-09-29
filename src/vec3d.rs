@@ -1,6 +1,6 @@
 use crate::{triangle::Triangle, vec2d::Vec2D};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vec3D {
     pub x: f64,
     pub y: f64,

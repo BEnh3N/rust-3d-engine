@@ -145,7 +145,10 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
                 let tex_w = (1.0 - t) * tex_sw + t * tex_ew;
 
                 let rgba = tex
-                    .get_pixel((tex_u / tex_w * tex_width) as u32, (tex_v / tex_w * tex_height) as u32 as u32)
+                    .get_pixel(
+                        (tex_u / tex_w * tex_width) as u32,
+                        (tex_v / tex_w * tex_height) as u32 as u32,
+                    )
                     .0;
 
                 color_position(j, i, canvas_width, canvas_height, frame, &rgba);
@@ -210,7 +213,10 @@ pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, te
                 let tex_w = (1.0 - t) * tex_sw + t * tex_ew;
 
                 let rgba = tex
-                    .get_pixel((tex_u / tex_w * tex_width) as u32, (tex_v / tex_w * tex_height) as u32)
+                    .get_pixel(
+                        (tex_u / tex_w * tex_width) as u32,
+                        (tex_v / tex_w * tex_height) as u32,
+                    )
                     .0;
 
                 color_position(j, i, canvas_width, canvas_height, frame, &rgba);

@@ -25,8 +25,9 @@ impl Mesh {
         Self { tris }
     }
 
-    pub fn from_file(filename: &str) -> Self {
-        let mut vecs: Vec<Vec3D> = vec![];
+    pub fn from_file(filename: &str, has_tex: bool) -> Self {
+        let mut verts: Vec<Vec3D> = vec![];
+        let mut texs: Vec<Vec2D> = vec![];
         let mut tris: Vec<Triangle> = vec![];
 
         let file = File::open(filename).expect("Error opening file!");
@@ -41,15 +42,66 @@ impl Mesh {
                         let nums = line
                             .map(|n| n.parse::<f64>().unwrap())
                             .collect::<Vec<f64>>();
-                        let vec = Vec3D::new(nums[0], nums[1], nums[2]);
-                        vecs.push(vec);
+                        let vert = Vec3D::new(nums[0], nums[1], nums[2]);
+                        verts.push(vert);
+                    }
+                    "vt" => {
+                        let nums = line
+                            .map(|n| n.parse::<f64>().unwrap())
+                            .collect::<Vec<f64>>();
+                        let tex = Vec2D::new(nums[0], 1.0 - nums[1]);
+                        texs.push(tex);
                     }
                     "f" => {
-                        let nums = line
-                            .map(|n| n.parse::<usize>().unwrap() - 1)
-                            .collect::<Vec<usize>>();
-                        let tri = Triangle::new(vecs[nums[0]], vecs[nums[1]], vecs[nums[2]]);
-                        tris.push(tri);
+                        if !has_tex {
+                            let nums = line
+                                .map(|n| n.parse::<usize>().unwrap() - 1)
+                                .collect::<Vec<usize>>();
+                            let tri = Triangle::new(verts[nums[0]], verts[nums[1]], verts[nums[2]]);
+                            tris.push(tri);
+                        } else {
+                            let mut vert_indices = vec![];
+                            let mut tex_indices = vec![];
+                            line.for_each(|p| {
+                                let mut pair =
+                                    p.split("/").map(|n| n.parse::<usize>().unwrap() - 1);
+                                vert_indices.push(pair.next().unwrap());
+                                tex_indices.push(pair.next().unwrap());
+                            });
+
+                            if vert_indices.len() == 3 {
+                                // Normal Triangle
+                                let tri = Triangle::new_uv(
+                                    verts[vert_indices[0]],
+                                    verts[vert_indices[1]],
+                                    verts[vert_indices[2]],
+                                    texs[tex_indices[0]],
+                                    texs[tex_indices[1]],
+                                    texs[tex_indices[2]],
+                                );
+                                tris.push(tri);
+                            } else {
+                                // Quad
+                                let tri1 = Triangle::new_uv(
+                                    verts[vert_indices[0]],
+                                    verts[vert_indices[1]],
+                                    verts[vert_indices[2]],
+                                    texs[tex_indices[0]],
+                                    texs[tex_indices[1]],
+                                    texs[tex_indices[2]],
+                                );
+                                tris.push(tri1);
+                                let tri2 = Triangle::new_uv(
+                                    verts[vert_indices[0]],
+                                    verts[vert_indices[2]],
+                                    verts[vert_indices[3]],
+                                    texs[tex_indices[0]],
+                                    texs[tex_indices[2]],
+                                    texs[tex_indices[3]],
+                                );
+                                tris.push(tri2);
+                            }
+                        }
                     }
                     _ => {}
                 }
