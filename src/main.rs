@@ -36,51 +36,6 @@ struct Engine3D {
     yaw: f32,
 }
 
-fn main() {
-    let event_loop = EventLoop::new();
-    let mut input = WinitInputHelper::new();
-    let window = {
-        let size = PhysicalSize::new(WIDTH * SCALE, HEIGHT * SCALE);
-        WindowBuilder::new()
-            .with_inner_size(size)
-            .with_resizable(false)
-            .build(&event_loop)
-            .unwrap()
-    };
-
-    let mut pixels = {
-        let window_size = window.inner_size();
-        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
-    };
-
-    let mut engine = Engine3D::new();
-
-    let mut last_frame_time = Instant::now();
-
-    event_loop.run(move |event, _, control_flow| {
-        if input.update(&event) {
-            if input.key_pressed(VirtualKeyCode::Escape) || input.close_requested() {
-                control_flow.set_exit();
-            }
-
-            let tris_to_raster = engine.update(&input);
-            engine.draw(pixels.frame_mut(), tris_to_raster);
-
-            if let Err(e) = pixels.render() {
-                println!("{}", e);
-                control_flow.set_exit();
-            }
-
-            engine.elapsed_time = last_frame_time.elapsed();
-            last_frame_time = Instant::now();
-
-            let fps = 1.0 / engine.elapsed_time.as_secs_f32();
-            window.set_title(&format!("Engine 3D - FPS: {:.0}", fps));
-        }
-    })
-}
-
 impl Engine3D {
     fn new() -> Self {
         // let mesh_cube = Mesh::new(vec![
@@ -338,4 +293,49 @@ impl Engine3D {
             }
         }
     }
+}
+
+fn main() {
+    let event_loop = EventLoop::new();
+    let mut input = WinitInputHelper::new();
+    let window = {
+        let size = PhysicalSize::new(WIDTH * SCALE, HEIGHT * SCALE);
+        WindowBuilder::new()
+            .with_inner_size(size)
+            .with_resizable(false)
+            .build(&event_loop)
+            .unwrap()
+    };
+
+    let mut pixels = {
+        let window_size = window.inner_size();
+        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
+        Pixels::new(WIDTH as u32, HEIGHT as u32, surface_texture).unwrap()
+    };
+
+    let mut engine = Engine3D::new();
+
+    let mut last_frame_time = Instant::now();
+
+    event_loop.run(move |event, _, control_flow| {
+        if input.update(&event) {
+            if input.key_pressed(VirtualKeyCode::Escape) || input.close_requested() {
+                control_flow.set_exit();
+            }
+
+            let tris_to_raster = engine.update(&input);
+            engine.draw(pixels.frame_mut(), tris_to_raster);
+
+            if let Err(e) = pixels.render() {
+                println!("{}", e);
+                control_flow.set_exit();
+            }
+
+            engine.elapsed_time = last_frame_time.elapsed();
+            last_frame_time = Instant::now();
+
+            let fps = 1.0 / engine.elapsed_time.as_secs_f32();
+            window.set_title(&format!("Engine 3D - FPS: {:.0}", fps));
+        }
+    })
 }
