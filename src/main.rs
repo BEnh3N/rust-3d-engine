@@ -4,7 +4,7 @@ use std::{
 };
 
 use engine_3d::{
-    draw_triangle, draw_triangle_fill, get_color,
+    draw_triangle, fill_triangle, get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_y, make_rotation_z, make_translation,
         multiply_matrix, multiply_vector, point_at, quick_inverse, Mat4x4,
@@ -104,20 +104,17 @@ impl Engine3D {
         //     [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
         // ]);
 
-        let mesh_cube = Mesh::from_file("axis.obj");
+        let mesh_cube = Mesh::from_file("mountains.obj");
 
         let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
-
-        let camera = Vec3D::empty();
-        let look_dir = Vec3D::new(0.0, 0.0, -1.0);
 
         Self {
             elapsed_time: Duration::new(0, 0),
             theta: 0.0,
             mesh_cube,
             mat_proj,
-            camera,
-            look_dir,
+            camera: Vec3D::empty(),
+            look_dir: Vec3D::empty(),
             yaw: 0.0,
         }
     }
@@ -125,14 +122,13 @@ impl Engine3D {
     fn update(&mut self, input: &WinitInputHelper) -> Vec<Triangle> {
         let elapsed_time = self.elapsed_time.as_secs_f32();
 
-        if input.key_held(VirtualKeyCode::Up) {
+        if input.key_held(VirtualKeyCode::Up) || input.key_held(VirtualKeyCode::Space) {
             self.camera.y += 8.0 * elapsed_time;
         }
-        if input.key_held(VirtualKeyCode::Down) {
+        if input.key_held(VirtualKeyCode::Down) || input.held_shift() {
             self.camera.y -= 8.0 * elapsed_time;
         }
 
-        // TODO: Figure out why inputs are reversed
         if input.key_held(VirtualKeyCode::Left) {
             self.camera.x += 8.0 * elapsed_time;
         }
@@ -337,7 +333,7 @@ impl Engine3D {
             }
 
             for t in list_triangles {
-                draw_triangle_fill(frame, WIDTH, &t);
+                fill_triangle(frame, WIDTH, &t);
                 // draw_triangle(frame, WIDTH, &t, &[0x00, 0x00, 0x00, 0xff]);
             }
         }

@@ -134,8 +134,8 @@ pub fn clip_against_plane(
 
         // Copy appearence info to new triangle
         let mut out_tri = Triangle::empty();
-        // out_tri.col = tri.col;
-        out_tri.col = [0x00, 0x00, 0xff, 0xff];
+        out_tri.col = tri.col;
+        // out_tri.col = [0x00, 0x00, 0xff, 0xff];
 
         // The inside point is valid, so keep that...
         out_tri.p[0] = inside_points[0].clone();
@@ -154,10 +154,10 @@ pub fn clip_against_plane(
         // Copy appearence info to new triangles
         let mut out_tri1 = Triangle::empty();
         let mut out_tri2 = Triangle::empty();
-        // out_tri1.col = tri.col;
-        // out_tri2.col = tri.col;
-        out_tri1.col = [0x00, 0xff, 0x00, 0xff];
-        out_tri2.col = [0xff, 0x00, 0x00, 0xff];
+        out_tri1.col = tri.col;
+        out_tri2.col = tri.col;
+        // out_tri1.col = [0x00, 0xff, 0x00, 0xff];
+        // out_tri2.col = [0xff, 0x00, 0x00, 0xff];
 
         // The first triangle consists of the two inside points and a new
         // point determined by the location where one side of the triangle

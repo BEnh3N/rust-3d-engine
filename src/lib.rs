@@ -14,7 +14,7 @@ pub fn get_color(lum: f32) -> [u8; 4] {
     [r, g, b, 0xff]
 }
 
-pub fn draw_triangle_fill(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
+pub fn fill_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
     let mut x1 = tri.p[0].x as i32;
     let mut y1 = tri.p[0].y as i32;
     let mut x2 = tri.p[1].x as i32;
