@@ -38,28 +38,28 @@ struct Engine3D {
 
 impl Engine3D {
     fn new() -> Self {
-        // let mesh_cube = Mesh::new(vec![
-        //     // SOUTH
-        //     [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0],
-        //     [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0],
-        //     // EAST
-        //     [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0],
-        //     [1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0],
-        //     // NORTH
-        //     [1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0],
-        //     [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0],
-        //     // WEST
-        //     [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0],
-        //     [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-        //     // TOP
-        //     [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-        //     [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
-        //     // BOTTOM
-        //     [1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-        //     [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-        // ]);
+        let mesh_cube = Mesh::new(vec![
+            // SOUTH
+            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            // EAST
+            [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            // NORTH
+            [1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            // WEST
+            [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            // TOP
+            [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            // BOTTOM
+            [1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+        ]);
 
-        let mesh_cube = Mesh::from_file("models/mountains.obj");
+        // let mesh_cube = Mesh::from_file("models/mountains.obj");
 
         let mat_proj = make_projection(90.0, HEIGHT as f32 / WIDTH as f32, 0.1, 1000.0);
 
@@ -132,10 +132,13 @@ impl Engine3D {
 
         // Draw Triangles
         for tri in &self.mesh_cube.tris {
-            let tri_transformed = Triangle::new(
+            let tri_transformed = Triangle::new_uv(
                 multiply_vector(&mat_world, &tri.p[0]),
                 multiply_vector(&mat_world, &tri.p[1]),
                 multiply_vector(&mat_world, &tri.p[2]),
+                tri.t[0],
+                tri.t[1],
+                tri.t[2],
             );
 
             // Calculate triangle normal
@@ -165,10 +168,13 @@ impl Engine3D {
                 let c = get_color(dp);
 
                 // Convert world space --> view space
-                let mut tri_viewed = Triangle::new(
+                let mut tri_viewed = Triangle::new_uv(
                     multiply_vector(&mat_view, &tri_transformed.p[0]),
                     multiply_vector(&mat_view, &tri_transformed.p[1]),
                     multiply_vector(&mat_view, &tri_transformed.p[2]),
+                    tri_transformed.t[0],
+                    tri_transformed.t[1],
+                    tri_transformed.t[2],
                 );
                 tri_viewed.col = c;
 
@@ -280,7 +286,7 @@ impl Engine3D {
                     // add these new ones to the back of the queue for subsequent
                     // clipping against next planes
                     for w in 0..tris_to_add {
-                        list_triangles.push(clipped[w].clone());
+                        list_triangles.push(clipped[w]);
                     }
                 }
 

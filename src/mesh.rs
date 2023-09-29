@@ -3,20 +3,23 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use crate::{triangle::Triangle, vec3d::Vec3D};
+use crate::{triangle::Triangle, vec3d::Vec3D, vec2d::Vec2D};
 
 pub struct Mesh {
     pub tris: Vec<Triangle>,
 }
 
 impl Mesh {
-    pub fn new(tri_list: Vec<[f32; 9]>) -> Self {
+    pub fn new(tri_list: Vec<[f32; 15]>) -> Self {
         let mut tris = vec![];
         for tri in tri_list {
-            tris.push(Triangle::new(
+            tris.push(Triangle::new_uv(
                 Vec3D::new(tri[0], tri[1], tri[2]),
                 Vec3D::new(tri[3], tri[4], tri[5]),
                 Vec3D::new(tri[6], tri[7], tri[8]),
+                Vec2D::new(tri[9], tri[10]),
+                Vec2D::new(tri[11], tri[12]),
+                Vec2D::new(tri[13], tri[14]),
             ));
         }
         Self { tris }
@@ -46,9 +49,9 @@ impl Mesh {
                             .map(|n| n.parse::<usize>().unwrap() - 1)
                             .collect::<Vec<usize>>();
                         let tri = Triangle::new(
-                            vecs[nums[0]].clone(),
-                            vecs[nums[1]].clone(),
-                            vecs[nums[2]].clone(),
+                            vecs[nums[0]],
+                            vecs[nums[1]],
+                            vecs[nums[2]],
                         );
                         tris.push(tri);
                     }

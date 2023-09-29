@@ -6,6 +6,7 @@ pub mod mat4x4;
 pub mod mesh;
 pub mod triangle;
 pub mod vec3d;
+pub mod vec2d;
 
 pub fn get_color(lum: f32) -> [u8; 4] {
     let r = (lum * 255.0) as u8;
