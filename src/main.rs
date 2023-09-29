@@ -4,15 +4,17 @@ use std::{
 };
 
 use engine_3d::{
-    draw_triangle, fill_triangle, get_color,
+    draw_triangle, get_color,
     mat4x4::{
         make_projection, make_rotation_x, make_rotation_y, make_rotation_z, make_translation,
         multiply_matrix, multiply_vector, point_at, quick_inverse, Mat4x4,
     },
     mesh::Mesh,
+    textured_triangle,
     triangle::Triangle,
     vec3d::{clip_against_plane, cross_product, dot_product, Vec3D},
 };
+use image::{io::Reader, DynamicImage};
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
     dpi::PhysicalSize, event::VirtualKeyCode, event_loop::EventLoop, window::WindowBuilder,
@@ -34,30 +36,58 @@ struct Engine3D {
     look_dir: Vec3D,
 
     yaw: f32,
+
+    spr_tex: DynamicImage,
 }
 
 impl Engine3D {
     fn new() -> Self {
         let mesh_cube = Mesh::new(vec![
             // SOUTH
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
             // EAST
-            [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
             // NORTH
-            [1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
             // WEST
-            [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
             // TOP
-            [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
             // BOTTOM
-            [1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-            [1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            [
+                1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+            ],
+            [
+                1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+            ],
         ]);
+
+        let spr_tex = Reader::open("grass.png").unwrap().decode().unwrap();
 
         // let mesh_cube = Mesh::from_file("models/mountains.obj");
 
@@ -71,6 +101,7 @@ impl Engine3D {
             camera: Vec3D::empty(),
             look_dir: Vec3D::empty(),
             yaw: 0.0,
+            spr_tex,
         }
     }
 
@@ -188,10 +219,13 @@ impl Engine3D {
 
                 for n in 0..clipped_triangles {
                     // Project triangles from 3D --> 2D
-                    let mut tri_projected = Triangle::new(
+                    let mut tri_projected = Triangle::new_uv(
                         multiply_vector(&self.mat_proj, &clipped[n].p[0]),
                         multiply_vector(&self.mat_proj, &clipped[n].p[1]),
                         multiply_vector(&self.mat_proj, &clipped[n].p[2]),
+                        clipped[n].t[0],
+                        clipped[n].t[1],
+                        clipped[n].t[2],
                     );
                     tri_projected.col = clipped[n].col;
 
@@ -294,8 +328,9 @@ impl Engine3D {
             }
 
             for t in list_triangles {
-                fill_triangle(frame, WIDTH, &t);
-                // draw_triangle(frame, WIDTH, &t, &[0x00, 0x00, 0x00, 0xff]);
+                // fill_triangle(frame, WIDTH, &t);
+                textured_triangle(frame, WIDTH, &t, &self.spr_tex);
+                draw_triangle(frame, WIDTH, &t, &[255, 255, 255, 0xff]);
             }
         }
     }

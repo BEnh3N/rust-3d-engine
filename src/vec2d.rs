@@ -1,7 +1,7 @@
 #[derive(Clone, Copy)]
 pub struct Vec2D {
-    u: f32,
-    v: f32,
+    pub u: f32,
+    pub v: f32,
 }
 
 impl Vec2D {

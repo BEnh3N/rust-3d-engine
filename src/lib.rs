@@ -1,12 +1,13 @@
 use std::mem;
 
+use image::{DynamicImage, GenericImageView};
 use triangle::Triangle;
 
 pub mod mat4x4;
 pub mod mesh;
 pub mod triangle;
-pub mod vec3d;
 pub mod vec2d;
+pub mod vec3d;
 
 pub fn get_color(lum: f32) -> [u8; 4] {
     let r = (lum * 255.0) as u8;
@@ -15,7 +16,7 @@ pub fn get_color(lum: f32) -> [u8; 4] {
     [r, g, b, 0xff]
 }
 
-pub fn fill_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
+pub fn textured_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle, tex: &DynamicImage) {
     let mut x1 = tri.p[0].x as i32;
     let mut y1 = tri.p[0].y as i32;
     let mut x2 = tri.p[1].x as i32;
@@ -23,35 +24,76 @@ pub fn fill_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
     let mut x3 = tri.p[2].x as i32;
     let mut y3 = tri.p[2].y as i32;
 
+    let mut u1 = tri.t[0].u;
+    let mut v1 = tri.t[0].v;
+    let mut u2 = tri.t[1].u;
+    let mut v2 = tri.t[1].v;
+    let mut u3 = tri.t[2].u;
+    let mut v3 = tri.t[2].v;
+
+    let tex_width = (tex.width() - 1) as f32;
+    let tex_height = (tex.height() - 1) as f32;
+
     let canvas_height = frame.len() as i32 / 4 / canvas_width;
 
     if y1 > y2 {
         mem::swap(&mut y1, &mut y2);
         mem::swap(&mut x1, &mut x2);
+        mem::swap(&mut u1, &mut u2);
+        mem::swap(&mut v1, &mut v2);
     }
     if y1 > y3 {
         mem::swap(&mut y1, &mut y3);
         mem::swap(&mut x1, &mut x3);
+        mem::swap(&mut u1, &mut u3);
+        mem::swap(&mut v1, &mut v3);
     }
     if y2 > y3 {
         mem::swap(&mut y2, &mut y3);
         mem::swap(&mut x2, &mut x3);
+        mem::swap(&mut u2, &mut u3);
+        mem::swap(&mut v2, &mut v3);
     }
 
     let mut dy1 = y2 - y1;
     let mut dx1 = x2 - x1;
+    let mut dv1 = v2 - v1;
+    let mut du1 = u2 - u1;
 
     let dy2 = y3 - y1;
     let dx2 = x3 - x1;
+    let dv2 = v3 - v1;
+    let du2 = u3 - u1;
+
+    // let mut tex_u;
+    // let mut tex_v;
 
     let mut dax_step = 0.0;
     let mut dbx_step = 0.0;
+    let mut du1_step = 0.0;
+    let mut dv1_step = 0.0;
+    let mut du2_step = 0.0;
+    let mut dv2_step = 0.0;
 
     if dy1 != 0 {
         dax_step = dx1 as f32 / dy1.abs() as f32;
     }
     if dy2 != 0 {
         dbx_step = dx2 as f32 / dy2.abs() as f32;
+    }
+
+    if dy1 != 0 {
+        du1_step = du1 / dy1.abs() as f32;
+    }
+    if dy1 != 0 {
+        dv1_step = dv1 / dy1.abs() as f32;
+    }
+
+    if dy2 != 0 {
+        du2_step = du2 / dy2.abs() as f32;
+    }
+    if dy2 != 0 {
+        dv2_step = dv2 / dy2.abs() as f32;
     }
 
     if dy1 != 0 {
@@ -59,18 +101,43 @@ pub fn fill_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
             let mut ax = (x1 as f32 + (i - y1) as f32 * dax_step) as i32;
             let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
 
+            let mut tex_su = u1 + (i - y1) as f32 * du1_step;
+            let mut tex_sv = v1 + (i - y1) as f32 * dv1_step;
+
+            let mut tex_eu = u1 + (i - y1) as f32 * du2_step;
+            let mut tex_ev = v1 + (i - y1) as f32 * dv2_step;
+
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
+                mem::swap(&mut tex_su, &mut tex_eu);
+                mem::swap(&mut tex_sv, &mut tex_ev);
             }
 
+            // tex_u = tex_su;
+            // tex_v = tex_sv;
+
+            let t_step = 1.0 / (bx - ax) as f32;
+            let mut t = 0.0;
+
             for j in ax..bx {
-                color_position(j, i, canvas_width, canvas_height, frame, &tri.col)
+                let tex_u = (1.0 - t) * tex_su + t * tex_eu;
+                let tex_v = (1.0 - t) * tex_sv + t * tex_ev;
+
+                let rgba = tex
+                    .get_pixel((tex_u * tex_width) as u32, (tex_v * tex_height) as u32)
+                    .0;
+
+                color_position(j, i, canvas_width, canvas_height, frame, &rgba);
+
+                t += t_step;
             }
         }
     }
 
     dy1 = y3 - y2;
     dx1 = x3 - x2;
+    dv1 = v3 - v2;
+    du1 = u3 - u2;
 
     if dy1 != 0 {
         dax_step = dx1 as f32 / dy1.abs() as f32;
@@ -80,16 +147,46 @@ pub fn fill_triangle(frame: &mut [u8], canvas_width: i32, tri: &Triangle) {
     }
 
     if dy1 != 0 {
+        du1_step = du1 / dy1.abs() as f32;
+    }
+    if dy1 != 0 {
+        dv1_step = dv1 / dy1.abs() as f32;
+    }
+
+    if dy1 != 0 {
         for i in y2..=y3 {
             let mut ax = (x2 as f32 + (i - y2) as f32 * dax_step) as i32;
             let mut bx = (x1 as f32 + (i - y1) as f32 * dbx_step) as i32;
 
+            let mut tex_su = u2 + (i - y2) as f32 * du1_step;
+            let mut tex_sv = v2 + (i - y2) as f32 * dv1_step;
+
+            let mut tex_eu = u1 + (i - y1) as f32 * du2_step;
+            let mut tex_ev = v1 + (i - y1) as f32 * dv2_step;
+
             if ax > bx {
                 mem::swap(&mut ax, &mut bx);
+                mem::swap(&mut tex_su, &mut tex_eu);
+                mem::swap(&mut tex_sv, &mut tex_ev);
             }
 
+            // tex_u = tex_su;
+            // tex_v = tex_sv;
+
+            let t_step = 1.0 / (bx - ax) as f32;
+            let mut t = 0.0;
+
             for j in ax..bx {
-                color_position(j, i, canvas_width, canvas_height, frame, &tri.col)
+                let tex_u = (1.0 - t) * tex_su + t * tex_eu;
+                let tex_v = (1.0 - t) * tex_sv + t * tex_ev;
+
+                let rgba = tex
+                    .get_pixel((tex_u * tex_width) as u32, (tex_v * tex_height) as u32)
+                    .0;
+
+                color_position(j, i, canvas_width, canvas_height, frame, &rgba);
+
+                t += t_step;
             }
         }
     }

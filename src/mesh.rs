@@ -3,7 +3,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use crate::{triangle::Triangle, vec3d::Vec3D, vec2d::Vec2D};
+use crate::{triangle::Triangle, vec2d::Vec2D, vec3d::Vec3D};
 
 pub struct Mesh {
     pub tris: Vec<Triangle>,
@@ -48,11 +48,7 @@ impl Mesh {
                         let nums = line
                             .map(|n| n.parse::<usize>().unwrap() - 1)
                             .collect::<Vec<usize>>();
-                        let tri = Triangle::new(
-                            vecs[nums[0]],
-                            vecs[nums[1]],
-                            vecs[nums[2]],
-                        );
+                        let tri = Triangle::new(vecs[nums[0]], vecs[nums[1]], vecs[nums[2]]);
                         tris.push(tri);
                     }
                     _ => {}
