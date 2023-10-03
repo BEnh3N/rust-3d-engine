@@ -25,6 +25,8 @@ const WIDTH: i32 = 256;
 const HEIGHT: i32 = 240;
 const SCALE: i32 = 4;
 
+const SPEED: f64 = 16.0;
+
 struct Engine3D {
     elapsed_time: Duration,
     theta: f64,
@@ -66,20 +68,20 @@ impl Engine3D {
         let elapsed_time = self.elapsed_time.as_secs_f64();
 
         if input.key_held(VirtualKeyCode::Up) || input.key_held(VirtualKeyCode::Space) {
-            self.camera.y += 8.0 * elapsed_time;
+            self.camera.y += SPEED * elapsed_time;
         }
         if input.key_held(VirtualKeyCode::Down) || input.held_shift() {
-            self.camera.y -= 8.0 * elapsed_time;
+            self.camera.y -= SPEED * elapsed_time;
         }
 
-        if input.key_held(VirtualKeyCode::Left) {
-            self.camera.x += 8.0 * elapsed_time;
-        }
-        if input.key_held(VirtualKeyCode::Right) {
-            self.camera.x -= 8.0 * elapsed_time;
-        }
+        // if input.key_held(VirtualKeyCode::Left) {
+        //     self.camera.x += SPEED * elapsed_time;
+        // }
+        // if input.key_held(VirtualKeyCode::Right) {
+        //     self.camera.x -= SPEED * elapsed_time;
+        // }
 
-        let forward = &self.look_dir * (8.0 * elapsed_time);
+        let forward = &self.look_dir * (SPEED * elapsed_time);
 
         if input.key_held(VirtualKeyCode::W) {
             self.camera = &self.camera + &forward;
