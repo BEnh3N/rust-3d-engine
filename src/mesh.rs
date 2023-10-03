@@ -84,7 +84,7 @@ impl Mesh {
 
         for line in reader.lines() {
             let line = line.unwrap();
-            let mut line = line.split_ascii_whitespace();            
+            let mut line = line.split_ascii_whitespace();
             if let Some(c) = line.next() {
                 match c {
                     "v" => {
