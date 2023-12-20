@@ -74,7 +74,7 @@ impl Engine3D {
             self.camera.y -= SPEED * elapsed_time;
         }
 
-        // Removed b/c this makes no sense in shooter cam
+        // Removed b/c this makes no sense in first-person cam
         // if input.key_held(VirtualKeyCode::Left) {
         //     self.camera.x += SPEED * elapsed_time;
         // }
