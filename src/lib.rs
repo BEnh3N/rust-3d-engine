@@ -154,7 +154,7 @@ pub fn textured_triangle(
                     let rgba = tex
                         .get_pixel(
                             (tex_u / tex_w * tex_width) as u32,
-                            (tex_v / tex_w * tex_height) as u32 as u32,
+                            (tex_v / tex_w * tex_height) as u32,
                         )
                         .0;
                     color_position(j, i, canvas_width, canvas_height, frame, &rgba);

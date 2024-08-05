@@ -16,6 +16,12 @@ impl Mat4x4 {
     }
 }
 
+impl Default for Mat4x4 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn multiply_vector(m: &Mat4x4, i: &Vec3D) -> Vec3D {
     Vec3D {
         x: i.x * m.m[0][0] + i.y * m.m[1][0] + i.z * m.m[2][0] + m.m[3][0],
@@ -26,7 +32,7 @@ pub fn multiply_vector(m: &Mat4x4, i: &Vec3D) -> Vec3D {
 }
 
 pub fn multiply_matrix(m1: &Mat4x4, m2: &Mat4x4) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     for c in 0..4 {
         for r in 0..4 {
             matrix.m[r][c] = m1.m[r][0] * m2.m[0][c]
@@ -52,7 +58,7 @@ pub fn point_at(pos: &Vec3D, target: &Vec3D, up: &Vec3D) -> Mat4x4 {
     let new_right = cross_product(&new_up, &new_forward);
 
     // Construct dimensioning and translation matrix
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = new_right.x;
     matrix.m[0][1] = new_right.y;
     matrix.m[0][2] = new_right.z;
@@ -73,7 +79,7 @@ pub fn point_at(pos: &Vec3D, target: &Vec3D, up: &Vec3D) -> Mat4x4 {
 }
 
 pub fn quick_inverse(m: &Mat4x4) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = m.m[0][0];
     matrix.m[0][1] = m.m[1][0];
     matrix.m[0][2] = m.m[2][0];
@@ -97,7 +103,7 @@ pub fn quick_inverse(m: &Mat4x4) -> Mat4x4 {
 }
 
 pub fn make_identity() -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = 1.0;
     matrix.m[1][1] = 1.0;
     matrix.m[2][2] = 1.0;
@@ -106,7 +112,7 @@ pub fn make_identity() -> Mat4x4 {
 }
 
 pub fn make_rotation_x(angle: f64) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = 1.0;
     matrix.m[1][1] = angle.cos();
     matrix.m[1][2] = angle.sin();
@@ -117,7 +123,7 @@ pub fn make_rotation_x(angle: f64) -> Mat4x4 {
 }
 
 pub fn make_rotation_y(angle: f64) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = angle.cos();
     matrix.m[0][2] = angle.sin();
     matrix.m[2][0] = -(angle.sin());
@@ -128,7 +134,7 @@ pub fn make_rotation_y(angle: f64) -> Mat4x4 {
 }
 
 pub fn make_rotation_z(angle: f64) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = angle.cos();
     matrix.m[0][1] = angle.sin();
     matrix.m[1][0] = -(angle.sin());
@@ -139,7 +145,7 @@ pub fn make_rotation_z(angle: f64) -> Mat4x4 {
 }
 
 pub fn make_translation(x: f64, y: f64, z: f64) -> Mat4x4 {
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = 1.0;
     matrix.m[1][1] = 1.0;
     matrix.m[2][2] = 1.0;
@@ -152,7 +158,7 @@ pub fn make_translation(x: f64, y: f64, z: f64) -> Mat4x4 {
 
 pub fn make_projection(fov: f64, aspect_ratio: f64, near: f64, far: f64) -> Mat4x4 {
     let fov_rad = 1.0 / (fov * 0.5 / 180.0 * PI).tan();
-    let mut matrix = Mat4x4::new();
+    let mut matrix = Mat4x4::default();
     matrix.m[0][0] = aspect_ratio * fov_rad;
     matrix.m[1][1] = fov_rad;
     matrix.m[2][2] = far / (far - near);

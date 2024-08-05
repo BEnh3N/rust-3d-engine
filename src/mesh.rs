@@ -116,7 +116,7 @@ impl Mesh {
                             let mut tex_indices = vec![];
                             line.for_each(|p| {
                                 let mut pair =
-                                    p.split("/").map(|n| n.parse::<usize>().unwrap() - 1);
+                                    p.split('/').map(|n| n.parse::<usize>().unwrap() - 1);
                                 vert_indices.push(pair.next().unwrap());
                                 tex_indices.push(pair.next().unwrap());
                             });

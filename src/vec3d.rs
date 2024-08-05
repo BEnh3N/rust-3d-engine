@@ -139,12 +139,12 @@ pub fn clip_against_plane(
         // All points lie on the outside of plane, so clip whole triangle
         // It ceases to exist
 
-        return (0, [Triangle::empty(), Triangle::empty()]);
+        (0, [Triangle::empty(), Triangle::empty()])
     } else if inside_point_count == 3 {
         // All points lie on the inside of plane, so do nothing
         // and allow triangle to simply pass through
 
-        return (1, [*tri, Triangle::empty()]);
+        (1, [*tri, Triangle::empty()])
     } else if inside_point_count == 1 && outside_point_count == 2 {
         // Triangle should be clipped. As two points lie outside
         // the plane, the triangle simply becomes a smaller triangle
@@ -183,7 +183,7 @@ pub fn clip_against_plane(
         out_tri.t[2].v = t * (outside_tex[1].v - inside_tex[0].v) + inside_tex[0].v;
         out_tri.t[2].w = t * (outside_tex[1].w - inside_tex[0].w) + inside_tex[0].w;
 
-        return (1, [out_tri, Triangle::empty()]);
+        (1, [out_tri, Triangle::empty()])
     } else {
         // Triangle should be clipped. As two points lie inside the plane,
         // the clipped triangle becomes a "quad". Fortunately, we can
@@ -233,7 +233,7 @@ pub fn clip_against_plane(
         out_tri2.t[2].v = t * (outside_tex[0].v - inside_tex[1].v) + inside_tex[1].v;
         out_tri2.t[2].w = t * (outside_tex[0].w - inside_tex[1].w) + inside_tex[1].w;
 
-        return (2, [out_tri1, out_tri2]); // Return two newly formed triangles which form a quad
+        (2, [out_tri1, out_tri2]) // Return two newly formed triangles which form a quad
     }
 }
 

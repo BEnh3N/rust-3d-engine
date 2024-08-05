@@ -177,17 +177,17 @@ impl Engine3D {
                     &tri_viewed,
                 );
 
-                for n in 0..clipped_triangles {
+                for &clipped_tri in clipped.iter().take(clipped_triangles) {
                     // Project triangles from 3D --> 2D
                     let mut tri_projected = Triangle::new_uv(
-                        multiply_vector(&self.mat_proj, &clipped[n].p[0]),
-                        multiply_vector(&self.mat_proj, &clipped[n].p[1]),
-                        multiply_vector(&self.mat_proj, &clipped[n].p[2]),
-                        clipped[n].t[0],
-                        clipped[n].t[1],
-                        clipped[n].t[2],
+                        multiply_vector(&self.mat_proj, &clipped_tri.p[0]),
+                        multiply_vector(&self.mat_proj, &clipped_tri.p[1]),
+                        multiply_vector(&self.mat_proj, &clipped_tri.p[2]),
+                        clipped_tri.t[0],
+                        clipped_tri.t[1],
+                        clipped_tri.t[2],
                     );
-                    tri_projected.col = clipped[n].col;
+                    tri_projected.col = clipped_tri.col;
 
                     tri_projected.t[0].u /= tri_projected.p[0].w;
                     tri_projected.t[1].u /= tri_projected.p[1].w;
@@ -295,8 +295,8 @@ impl Engine3D {
                     // Clipping may yield a variable number of triangles, so
                     // add these new ones to the back of the queue for subsequent
                     // clipping against next planes
-                    for w in 0..tris_to_add {
-                        list_triangles.push(clipped[w]);
+                    for &tri in clipped.iter().take(tris_to_add) {
+                        list_triangles.push(tri);
                     }
                 }
 
