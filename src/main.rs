@@ -14,7 +14,7 @@ use engine_3d::{
     triangle::Triangle,
     vec3d::{clip_against_plane, cross_product, dot_product, Vec3D},
 };
-use image::{io::Reader, DynamicImage};
+use image::{DynamicImage, ImageReader};
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
     dpi::PhysicalSize, event::VirtualKeyCode, event_loop::EventLoop, window::WindowBuilder,
@@ -45,7 +45,7 @@ struct Engine3D {
 impl Engine3D {
     fn new() -> Self {
         let mesh_cube = Mesh::from_file("models/spyro_level.obj", true);
-        let spr_tex = Reader::open("textures/spyro_high.png")
+        let spr_tex = ImageReader::open("textures/spyro_high.png")
             .unwrap()
             .decode()
             .unwrap();
