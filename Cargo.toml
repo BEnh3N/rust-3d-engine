@@ -9,5 +9,5 @@ edition = "2021"
 image = "0.25"
 pixels = "0.13.0"
 pixels_primitives = "0.1.1"
-winit = "0.28.6"
-winit_input_helper = "0.14.1"
+winit = { version = "0.29", features = ["rwh_05"] }
+winit_input_helper = "0.16"

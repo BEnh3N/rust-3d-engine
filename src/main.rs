@@ -16,9 +16,7 @@ use engine_3d::{
 };
 use image::{DynamicImage, ImageReader};
 use pixels::{Pixels, SurfaceTexture};
-use winit::{
-    dpi::PhysicalSize, event::VirtualKeyCode, event_loop::EventLoop, window::WindowBuilder,
-};
+use winit::{dpi::PhysicalSize, event_loop::EventLoop, keyboard::KeyCode, window::WindowBuilder};
 use winit_input_helper::WinitInputHelper;
 
 const WIDTH: i32 = 256;
@@ -67,10 +65,10 @@ impl Engine3D {
     fn update(&mut self, input: &WinitInputHelper) -> Vec<Triangle> {
         let elapsed_time = self.elapsed_time.as_secs_f64();
 
-        if input.key_held(VirtualKeyCode::Up) || input.key_held(VirtualKeyCode::Space) {
+        if input.key_held(KeyCode::ArrowUp) || input.key_held(KeyCode::Space) {
             self.camera.y += SPEED * elapsed_time;
         }
-        if input.key_held(VirtualKeyCode::Down) || input.held_shift() {
+        if input.key_held(KeyCode::ArrowDown) || input.held_shift() {
             self.camera.y -= SPEED * elapsed_time;
         }
 
@@ -84,17 +82,17 @@ impl Engine3D {
 
         let forward = &self.look_dir * (SPEED * elapsed_time);
 
-        if input.key_held(VirtualKeyCode::W) {
+        if input.key_held(KeyCode::KeyW) {
             self.camera = &self.camera + &forward;
         }
-        if input.key_held(VirtualKeyCode::S) {
+        if input.key_held(KeyCode::KeyS) {
             self.camera = &self.camera - &forward;
         }
 
-        if input.key_held(VirtualKeyCode::A) {
+        if input.key_held(KeyCode::KeyA) {
             self.yaw -= 2.0 * elapsed_time;
         }
-        if input.key_held(VirtualKeyCode::D) {
+        if input.key_held(KeyCode::KeyD) {
             self.yaw += 2.0 * elapsed_time;
         }
 
@@ -320,7 +318,7 @@ impl Engine3D {
 }
 
 fn main() {
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let mut input = WinitInputHelper::new();
     let window = {
         let size = PhysicalSize::new(WIDTH * SCALE, HEIGHT * SCALE);
@@ -341,25 +339,27 @@ fn main() {
 
     let mut last_frame_time = Instant::now();
 
-    event_loop.run(move |event, _, control_flow| {
-        if input.update(&event) {
-            if input.key_pressed(VirtualKeyCode::Escape) || input.close_requested() {
-                control_flow.set_exit();
+    event_loop
+        .run(move |event, elwt| {
+            if input.update(&event) {
+                if input.key_pressed(KeyCode::Escape) || input.close_requested() {
+                    elwt.exit();
+                }
+
+                let tris_to_raster = engine.update(&input);
+                engine.draw(pixels.frame_mut(), tris_to_raster);
+
+                if let Err(e) = pixels.render() {
+                    println!("{}", e);
+                    elwt.exit();
+                }
+
+                engine.elapsed_time = last_frame_time.elapsed();
+                last_frame_time = Instant::now();
+
+                let fps = 1.0 / engine.elapsed_time.as_secs_f64();
+                window.set_title(&format!("Engine 3D - FPS: {:.0}", fps));
             }
-
-            let tris_to_raster = engine.update(&input);
-            engine.draw(pixels.frame_mut(), tris_to_raster);
-
-            if let Err(e) = pixels.render() {
-                println!("{}", e);
-                control_flow.set_exit();
-            }
-
-            engine.elapsed_time = last_frame_time.elapsed();
-            last_frame_time = Instant::now();
-
-            let fps = 1.0 / engine.elapsed_time.as_secs_f64();
-            window.set_title(&format!("Engine 3D - FPS: {:.0}", fps));
-        }
-    })
+        })
+        .unwrap();
 }
